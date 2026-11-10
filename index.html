@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>열저항 실험실 2</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: lab bench. Condition rail on the left; live flow view, then Step 1 (Nu correlation) and Step 2 (heat rate) stacked on the right. */
+:root{
+  --bg:#f1f4f6; --panel:#ffffff; --panel-2:#e9eef2; --scene:#f6f9fb; --ink:#15212b; --muted:#566475; --line:#d3dbe3;
+  --accent:#0a6a84; --accent-ink:#ffffff; --accent-soft:#d6ecf2; --good:#2a7a3b; --bad:#b42828; --warn:#9a5600;
+  --font-sans:"IBM Plex Sans KR",system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e141a; --panel:#151d25; --panel-2:#1c2630; --scene:#111921; --ink:#e4ecf3; --muted:#93a2b3; --line:#293644;
+  --accent:#4cc0dc; --accent-ink:#06222b; --accent-soft:#12323d; --good:#5ccf72; --bad:#ff7070; --warn:#f0a94c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e141a; --panel:#151d25; --panel-2:#1c2630; --scene:#111921; --ink:#e4ecf3; --muted:#93a2b3; --line:#293644;
+  --accent:#4cc0dc; --accent-ink:#06222b; --accent-soft:#12323d; --good:#5ccf72; --bad:#ff7070; --warn:#f0a94c; color-scheme:dark}
+html{font-size:15px}
+html.big{font-size:18px}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-sans);line-height:1.55}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+*{box-sizing:border-box}
+h1,h2,h3{margin:0;text-wrap:balance}
+.wrap{max-width:1360px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-block:10px}
+.brand{display:flex;align-items:center;gap:12px;margin-right:auto;min-width:0}
+.logo{width:38px;height:38px;border-radius:9px;flex:none;background:conic-gradient(from 200deg,#2b6cb0,#22a6c7,#f2c94c,#f2994a,#d64545,#2b6cb0)}
+.brand h1{font-size:1.3rem;font-weight:700;letter-spacing:-.01em}
+.brand .sub{margin:0;color:var(--muted);font-size:.86rem}
+.brand .author{margin:0;color:var(--accent);font-size:.8rem;font-weight:500}
+.tabs{display:flex;gap:4px;background:var(--panel-2);padding:4px;border-radius:10px}
+.tabs button{border:0;background:transparent;color:var(--muted);padding:7px 14px;border-radius:7px;font:600 .92rem var(--font-sans);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+button{font-family:var(--font-sans)}
+.ghost{border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:7px 12px;border-radius:8px;font-weight:500;cursor:pointer}
+.ghost[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent)}
+.primary{border:0;background:var(--accent);color:var(--accent-ink);padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+main{padding-block:18px 48px}
+.grid{display:grid;grid-template-columns:340px minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+.rail,.stage{display:grid;gap:14px;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.card h3{font-size:.78rem;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:10px}
+.card h2{font-size:1.08rem;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.step-tag{font:600 .74rem var(--font-mono);color:var(--accent-ink);background:var(--accent);padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:var(--panel-2);padding:4px;border-radius:9px}
+.seg button{border:0;background:transparent;color:var(--muted);padding:7px 8px;border-radius:6px;font-weight:600;cursor:pointer;font-size:.9rem}
+.seg button[aria-pressed="true"]{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:5px 11px;font-size:.84rem;cursor:pointer}
+.chips button:hover{border-color:var(--accent);color:var(--accent)}
+.cases{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.cases button{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:9px;padding:7px 8px;cursor:pointer;min-width:0}
+.cases button b{display:block;font-size:.86rem;font-weight:600;line-height:1.25}
+.cases button small{display:block;color:var(--muted);font-size:.74rem;line-height:1.25}
+.cases button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.cases svg{width:34px;height:28px}
+.fields{display:grid;gap:10px;margin-top:10px}
+.f{display:grid;gap:4px;font-size:.86rem;color:var(--muted)}
+.f .row{display:grid;grid-template-columns:minmax(0,1fr) 112px;gap:8px;align-items:center}
+.in{display:flex;align-items:center;border:1px solid var(--line);border-radius:7px;background:var(--panel);overflow:hidden}
+.in input{width:100%;min-width:0;border:0;background:transparent;color:var(--ink);padding:6px 8px;font:500 .92rem var(--font-mono);font-variant-numeric:tabular-nums}
+.in em{font-style:normal;color:var(--muted);font-size:.78rem;padding:0 8px 0 2px;white-space:nowrap}
+input[type=range]{width:100%;accent-color:var(--accent)}
+select{width:100%;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--ink);padding:7px 8px;font:500 .92rem var(--font-sans)}
+.props{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font:500 .8rem var(--font-mono);color:var(--muted)}
+.props span b{color:var(--ink);font-weight:500}
+.custom{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mut{color:var(--muted)}
+canvas{display:block;width:100%;border-radius:9px;background:var(--scene)}
+.scene-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:.8rem;color:var(--muted)}
+.legend{display:flex;align-items:center;gap:8px;font-family:var(--font-mono)}
+.legend i{display:block;width:150px;height:10px;border-radius:5px;background:linear-gradient(90deg,#2b6cb0,#22a6c7,#f2c94c,#f2994a,#d64545)}
+.scene-bar .ghost{padding:4px 10px;font-size:.8rem;margin-left:auto}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:640px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tile{background:var(--panel-2);border-radius:9px;padding:9px 12px;min-width:0}
+.tile span{display:block;font-size:.76rem;color:var(--muted);letter-spacing:.03em}
+.tile b{display:block;font:600 1.25rem var(--font-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile small{color:var(--muted);font-size:.76rem}
+.tile.key{background:var(--accent-soft)}
+.path{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:12px}
+.path span{background:var(--panel-2);border-radius:7px;padding:5px 10px;font-size:.84rem}
+.path span.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.path i{color:var(--muted);font-style:normal}
+.regime{overflow-x:auto;margin-bottom:12px}
+.regime svg{display:block;width:100%;min-width:560px;height:auto}
+.steps{margin:0;padding-left:1.3em;display:grid;gap:8px}
+.steps li{padding-left:4px}
+.steps li>b:first-child{display:block;font-size:.88rem;margin-bottom:2px}
+.eq{font-family:var(--font-mono);font-size:.9rem;overflow-x:auto;overflow-wrap:anywhere}
+.formula{display:block;background:var(--accent-soft);border-left:3px solid var(--accent);padding:7px 12px;border-radius:0 7px 7px 0;font:500 .95rem var(--font-mono);margin:4px 0;overflow-x:auto}
+.notes{display:grid;gap:6px;margin-top:10px}
+.note{font-size:.84rem;padding:6px 10px;border-radius:7px;background:var(--panel-2)}
+.note.warn{color:var(--warn)}
+.note.alt{color:var(--muted)}
+.dir{font-weight:600}
+.dir.hot{color:#d64545}.dir.cold{color:#2b8ad6}
+/* design + game */
+.sum{display:grid;gap:4px;font-size:.86rem}
+.sum div{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dashed var(--line);padding:3px 0}
+.sum div span:last-child{font-family:var(--font-mono);text-align:right}
+.result{font:600 1.5rem var(--font-mono);color:var(--accent);font-variant-numeric:tabular-nums}
+.game-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px;align-items:start}
+@media (max-width:980px){.game-grid{grid-template-columns:minmax(0,1fr)}}
+.score{display:flex;gap:16px;font-family:var(--font-mono);font-size:.9rem;flex-wrap:wrap}
+.score b{color:var(--accent)}
+.tag{display:inline-block;font-size:.74rem;letter-spacing:.06em;color:var(--accent);background:var(--accent-soft);padding:3px 9px;border-radius:999px;font-weight:600;margin-bottom:6px}
+.prob p{margin:0 0 8px;max-width:65ch}
+.givens{margin:8px 0 12px;padding:0;list-style:none;display:grid;gap:4px;font-family:var(--font-mono);font-size:.86rem}
+.givens li{padding:4px 10px;background:var(--panel-2);border-radius:6px}
+.stagebox{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.stagebox[hidden]{display:none}
+.ask{font-weight:600;margin-bottom:8px;display:block}
+.choices{display:grid;gap:6px}
+.choices button{text-align:left;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:8px 12px;font:500 .9rem var(--font-mono);cursor:pointer}
+.choices button.ok{border-color:var(--good);background:color-mix(in srgb,var(--good) 14%,transparent)}
+.choices button.no{border-color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.ansrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ansrow .in{width:220px}
+.fb{min-height:1.4em;margin-top:8px;font-weight:600}
+.fb.ok{color:var(--good)}.fb.no{color:var(--bad)}.fb.hint{color:var(--muted);font-weight:500}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top"><div class="wrap top-in">
+  <div class="brand"><div class="logo" aria-hidden="true"></div><div>
+    <h1>열저항 실험실 2</h1>
+    <p class="sub">대류 열전달계수 추정 · 무차원수(Re, Gr, Pr) → Nu → h → q</p>
+    <p class="author">작성자: 강원대학교 식품공정공학연구실 윤원병</p>
+  </div></div>
+  <nav class="tabs" role="tablist" aria-label="화면">
+    <button role="tab" data-view="sim" aria-selected="true">시뮬레이터</button>
+    <button role="tab" data-view="design" aria-selected="false">역설계</button>
+    <button role="tab" data-view="game" aria-selected="false">챌린지</button>
+  </nav>
+  <button id="bigBtn" class="ghost" aria-pressed="false">크게 보기</button>
+</div></header>
+
+<main class="wrap">
+<!-- ================= SIMULATOR ================= -->
+<section id="view-sim">
+  <div class="grid">
+    <aside class="rail">
+      <div class="card"><h3>예제 불러오기</h3><div class="chips" id="presets"></div></div>
+      <div class="card"><h3>대류의 종류</h3>
+        <div class="seg" id="modeSeg"><button data-mode="forced">강제대류 (Re, Pr)</button><button data-mode="natural">자연대류 (Gr, Pr)</button></div>
+      </div>
+      <div class="card"><h3>형상과 흐름</h3><div class="cases" id="caseGrid"></div>
+        <div id="faceBox" class="fields" hidden><div class="f">전열면 방향 (반대면은 단열)
+          <div class="seg" id="faceSeg"><button data-face="up">윗면이 전열면</button><button data-face="down">아랫면이 전열면</button></div></div></div>
+      </div>
+      <div class="card"><h3>유체</h3>
+        <select id="fluid"><option value="air">공기 (1 atm)</option><option value="water">물 (잠긴 상태)</option><option value="custom">물성치 직접 입력</option></select>
+        <div class="custom" id="customBox" hidden></div>
+        <div class="props" id="propBox"></div>
+      </div>
+      <div class="card"><h3>조건</h3><div class="fields" id="condFields"></div></div>
+    </aside>
+
+    <div class="stage">
+      <div class="card">
+        <canvas id="scene" aria-label="흐름과 온도 분포 애니메이션"></canvas>
+        <div class="scene-bar">
+          <span class="legend"><span id="lgMin">0 °C</span><i></i><span id="lgMax">100 °C</span></span>
+          <span>입자 색 = 유체 온도 · 경계층 두께는 과장 표시</span>
+          <button class="ghost" id="pauseBtn" aria-pressed="false">일시정지</button>
+        </div>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="card">
+        <h2><span class="step-tag">1단계</span>Nu 상관식 선택과 열전달계수 h</h2>
+        <div class="path" id="path"></div>
+        <div class="regime" id="regime"></div>
+        <ol class="steps" id="work1"></ol>
+        <div class="notes" id="notes1"></div>
+      </div>
+      <div class="card">
+        <h2><span class="step-tag">2단계</span>열전달 속도 q</h2>
+        <ol class="steps" id="work2"></ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= DESIGN ================= -->
+<section id="view-design" hidden>
+  <div class="grid">
+    <aside class="rail">
+      <div class="card"><h3>현재 조건 (시뮬레이터와 공유)</h3><div class="sum" id="dSum"></div>
+        <p class="mut" style="font-size:.82rem;margin:10px 0 0">형상·유체·온도는 시뮬레이터 탭에서 바꿉니다.</p></div>
+      <div class="card"><h3>역설계 목표</h3>
+        <div class="fields">
+          <label class="f" for="unk">구할 값
+            <select id="unk"></select></label>
+          <label class="f" for="tq">목표 열전달 속도 |q|
+            <span class="in"><input id="tq" type="number" step="any" min="0"><em>W</em></span></label>
+          <button class="primary" id="solveBtn">계산하기</button>
+        </div>
+      </div>
+    </aside>
+    <div class="stage">
+      <div class="card"><h2>결과</h2><div id="dRes"></div>
+        <canvas id="dplot" aria-label="미지수에 따른 열전달 속도 그래프" style="margin-top:12px"></canvas>
+        <p class="mut" style="font-size:.8rem;margin:6px 0 0">곡선이 꺾이는 곳은 상관식이 바뀌는 지점(층류↔난류 등)입니다.</p>
+      </div>
+      <div class="card"><h2><span class="step-tag">1단계</span>해의 조건에서 h 계산</h2><div class="path" id="dPath"></div><ol class="steps" id="dWork1"></ol><div class="notes" id="dNotes"></div></div>
+      <div class="card"><h2><span class="step-tag">2단계</span>q 확인</h2><ol class="steps" id="dWork2"></ol></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GAME ================= -->
+<section id="view-game" hidden>
+  <div class="card" style="margin-bottom:14px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="score"><span>점수 <b id="gScore">0</b></span><span>연속 정답 <b id="gStreak">0</b></span><span>문제 <b id="gCount">0</b></span></div>
+    <button class="primary" id="newBtn" style="margin-left:auto">새 문제</button>
+  </div>
+  <div class="game-grid">
+    <div class="card prob" id="gProb"></div>
+    <div class="stage">
+      <div class="card"><canvas id="gscene" aria-label="문제 상황 그림"></canvas></div>
+      <div class="card" id="gSolve" hidden>
+        <h2><span class="step-tag">1단계</span>풀이: h</h2><div class="path" id="gPath"></div><div class="regime" id="gRegime"></div><ol class="steps" id="gWork1"></ol>
+        <h2 style="margin-top:14px"><span class="step-tag">2단계</span>풀이: q</h2><ol class="steps" id="gWork2"></ol>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<script>
+/* ================= PHYSICS (no DOM) ================= */
+const G = 9.81;
+const FLUIDS = {
+  air:{name:'공기', T:[-20,0,20,40,60,80,100,150,200,250],
+    rho:[1.394,1.292,1.204,1.127,1.059,0.9994,0.9458,0.8343,0.7459,0.6746],
+    cp:[1005,1006,1007,1007,1007,1008,1009,1014,1023,1033],
+    k:[0.02211,0.02364,0.02514,0.02662,0.02808,0.02953,0.03095,0.03431,0.03779,0.04104],
+    nu:[1.169e-5,1.338e-5,1.516e-5,1.702e-5,1.896e-5,2.097e-5,2.306e-5,2.866e-5,3.455e-5,4.091e-5],
+    Pr:[0.7408,0.7362,0.7309,0.7255,0.7202,0.7154,0.7111,0.7023,0.6974,0.6946]},
+  water:{name:'물', T:[0,10,20,30,40,50,60,70,80,90,100],
+    rho:[999.8,999.7,998.0,995.6,992.1,988.1,983.3,977.5,971.8,965.3,957.9],
+    cp:[4217,4194,4182,4180,4179,4181,4185,4190,4197,4205,4217],
+    k:[0.561,0.580,0.598,0.615,0.631,0.644,0.654,0.663,0.670,0.675,0.679],
+    mu:[1.792e-3,1.307e-3,1.002e-3,0.798e-3,0.653e-3,0.547e-3,0.467e-3,0.404e-3,0.355e-3,0.315e-3,0.282e-3],
+    Pr:[13.5,9.45,7.01,5.42,4.32,3.55,2.99,2.55,2.22,1.96,1.75],
+    beta:[-0.068e-3,0.088e-3,0.195e-3,0.276e-3,0.361e-3,0.436e-3,0.523e-3,0.584e-3,0.653e-3,0.700e-3,0.750e-3]}
+};
+const CUSTOM = {rho:1030, cp:3900, k:0.55, mu:2.0e-3, beta:3.0e-4};
+function interp(xs, ys, x){
+  if (x <= xs[0]) return ys[0];
+  const n = xs.length - 1;
+  if (x >= xs[n]) return ys[n];
+  let i = 0; while (x > xs[i+1]) i++;
+  const t = (x - xs[i]) / (xs[i+1] - xs[i]);
+  return ys[i] + t * (ys[i+1] - ys[i]);
+}
+function props(fl, T){
+  if (fl === 'custom'){
+    const c = CUSTOM;
+    return {rho:c.rho, cp:c.cp, k:c.k, mu:c.mu, nu:c.mu/c.rho, Pr:c.cp*c.mu/c.k, beta:c.beta, T, out:false};
+  }
+  const f = FLUIDS[fl];
+  const out = T < f.T[0] || T > f.T[f.T.length-1];
+  const rho = interp(f.T, f.rho, T), cp = interp(f.T, f.cp, T), k = interp(f.T, f.k, T), Pr = interp(f.T, f.Pr, T);
+  let nu, mu;
+  if (f.nu){ nu = interp(f.T, f.nu, T); mu = nu * rho; } else { mu = interp(f.T, f.mu, T); nu = mu / rho; }
+  const beta = f.beta ? interp(f.T, f.beta, T) : 1 / (T + 273.15);
+  return {rho, cp, k, mu, nu, Pr, beta, T, out};
+}
+const c3 = Math.cbrt;
+function F(x, s){
+  s = s || 4;
+  if (x === undefined || x === null || !isFinite(x)) return '—';
+  if (x === 0) return '0';
+  const a = Math.abs(x);
+  if (a >= 1e5 || a < 1e-3){
+    let e = Math.floor(Math.log10(a));
+    let m = +(x / Math.pow(10, e)).toPrecision(3);
+    if (Math.abs(m) >= 10){ m = +(m/10).toPrecision(3); e++; }
+    return m + '×10<sup>' + e + '</sup>';
+  }
+  return String(+x.toPrecision(s));
+}
+const SUPD = {'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+function Fu(x){ // plain-text (unicode superscript) for SVG
+  return F(x, 3).replace(/<sup>(.*?)<\/sup>/g, (_, e) => e.split('').map(c => SUPD[c] || c).join(''));
+}
+
+/* Correlation helpers */
+const hilpert = [[4,0.989,0.330],[40,0.911,0.385],[4000,0.683,0.466],[40000,0.193,0.618],[Infinity,0.027,0.805]];
+const morgan  = [[1e-2,0.675,0.058],[1e2,1.02,0.148],[1e4,0.850,0.188],[1e7,0.480,0.250],[Infinity,0.125,0.333]];
+const CCvert = r => Math.pow(0.825 + 0.387*Math.pow(r.Ra,1/6)/Math.pow(1+Math.pow(0.492/r.p.Pr,9/16),8/27), 2);
+const CCcyl  = r => Math.pow(0.60 + 0.387*Math.pow(r.Ra,1/6)/Math.pow(1+Math.pow(0.559/r.p.Pr,9/16),8/27), 2);
+const CCtex = 'Nu = {0.825 + 0.387 Ra<sup>1/6</sup> / [1 + (0.492/Pr)<sup>9/16</sup>]<sup>8/27</sup>}<sup>2</sup>';
+function vertBands(){
+  return [
+    {hi:1e4, name:'Churchill–Chu (낮은 Ra)', short:'Churchill–Chu', tex:CCtex, f:CCvert,
+      sub:r=>`{0.825 + 0.387 × (${F(r.Ra)})<sup>1/6</sup> / [1 + (0.492/${F(r.p.Pr)})<sup>9/16</sup>]<sup>8/27</sup>}<sup>2</sup>`},
+    {hi:1e9, name:'층류 (C = 0.59, n = 1/4)', short:'층류 0.59Ra^¼', tex:'Nu = 0.59 Ra<sub>L</sub><sup>1/4</sup>', f:r=>0.59*Math.pow(r.Ra,0.25),
+      sub:r=>`0.59 × (${F(r.Ra)})<sup>1/4</sup>`},
+    {hi:Infinity, turb:true, name:'난류 (C = 0.10, n = 1/3)', short:'난류 0.10Ra^⅓', tex:'Nu = 0.10 Ra<sub>L</sub><sup>1/3</sup>', f:r=>0.10*c3(r.Ra),
+      sub:r=>`0.10 × (${F(r.Ra)})<sup>1/3</sup>`}
+  ];
+}
+function vertAlt(r){ return r.idx === 0 ? null : {name:'Churchill–Chu 전범위식', Nu:CCvert(r)}; }
+
+const CASES = {
+  fp:{mode:'forced', name:'평판', sub:'평행 흐름', axis:'Re',
+    dims:[['L','흐름 방향 길이 L','m',0.5,0.01,5],['W','폭 W','m',1,0.01,5]],
+    sizeKey:'L', Lc:d=>d.L, LcTex:'L<sub>c</sub> = L (흐름 방향 길이)', area:d=>d.L*d.W,
+    areaTex:'A = L × W', areaSub:d=>`${F(d.L)} × ${F(d.W)}`,
+    vis:[1e2,1e8], valid:[0,1e8],
+    bands:()=>[
+      {hi:5e5, name:'층류 평판', short:'층류', tex:'Nu = 0.664 Re<sub>L</sub><sup>1/2</sup> Pr<sup>1/3</sup>',
+        f:r=>0.664*Math.sqrt(r.Re)*c3(r.p.Pr), sub:r=>`0.664 × (${F(r.Re)})<sup>1/2</sup> × (${F(r.p.Pr)})<sup>1/3</sup>`},
+      {hi:Infinity, turb:true, name:'층류+난류 혼합 평판', short:'혼합(층류→난류)', tex:'Nu = (0.037 Re<sub>L</sub><sup>0.8</sup> − 871) Pr<sup>1/3</sup>',
+        f:r=>(0.037*Math.pow(r.Re,0.8)-871)*c3(r.p.Pr), sub:r=>`(0.037 × (${F(r.Re)})<sup>0.8</sup> − 871) × (${F(r.p.Pr)})<sup>1/3</sup>`}
+    ]},
+  cyl:{mode:'forced', name:'원통', sub:'직교 흐름', axis:'Re',
+    dims:[['D','지름 D','m',0.06,0.002,1],['Lz','길이 L','m',1,0.05,10]],
+    sizeKey:'D', Lc:d=>d.D, LcTex:'L<sub>c</sub> = D (지름)', area:d=>Math.PI*d.D*d.Lz,
+    areaTex:'A = πDL', areaSub:d=>`π × ${F(d.D)} × ${F(d.Lz)}`,
+    vis:[0.1,1e6], valid:[0.4,4e5],
+    bands:()=>hilpert.map(([hi,C,m])=>({hi, turb:hi===Infinity, name:`Hilpert (C = ${C}, m = ${m})`, short:`C=${C}, m=${m}`,
+      tex:`Nu = ${C} Re<sub>D</sub><sup>${m}</sup> Pr<sup>1/3</sup>`, f:r=>C*Math.pow(r.Re,m)*c3(r.p.Pr),
+      sub:r=>`${C} × (${F(r.Re)})<sup>${m}</sup> × (${F(r.p.Pr)})<sup>1/3</sup>`})),
+    alt:r=>{const Re=r.Re,Pr=r.p.Pr; if(Re*Pr<0.2) return null;
+      return {name:'Churchill–Bernstein 식', Nu:0.3+0.62*Math.sqrt(Re)*c3(Pr)/Math.pow(1+Math.pow(0.4/Pr,2/3),0.25)*Math.pow(1+Math.pow(Re/282000,5/8),4/5)};}},
+  sph:{mode:'forced', name:'구', sub:'외부 흐름', axis:'Re',
+    dims:[['D','지름 D','m',0.08,0.002,1]],
+    sizeKey:'D', Lc:d=>d.D, LcTex:'L<sub>c</sub> = D (지름)', area:d=>Math.PI*d.D*d.D,
+    areaTex:'A = πD<sup>2</sup>', areaSub:d=>`π × (${F(d.D)})<sup>2</sup>`,
+    vis:[0.1,1e6], valid:[1,7e4],
+    bands:()=>[{hi:Infinity, name:'Ranz–Marshall', short:'Ranz–Marshall (단일식)', tex:'Nu = 2 + 0.6 Re<sub>D</sub><sup>1/2</sup> Pr<sup>1/3</sup>',
+      f:r=>2+0.6*Math.sqrt(r.Re)*c3(r.p.Pr), sub:r=>`2 + 0.6 × (${F(r.Re)})<sup>1/2</sup> × (${F(r.p.Pr)})<sup>1/3</sup>`}],
+    alt:r=>({name:'Whitaker 식 (μ/μ<sub>s</sub> 보정)', Nu:2+(0.4*Math.sqrt(r.Re)+0.06*Math.pow(r.Re,2/3))*Math.pow(r.p.Pr,0.4)*Math.pow(r.p.mu/r.mus,0.25)})},
+  pipe:{mode:'forced', name:'관 내부', sub:'원관 흐름', axis:'Re',
+    dims:[['D','관 안지름 D','m',0.025,0.003,0.5],['L','관 길이 L','m',3,0.1,100]],
+    sizeKey:'L', Lc:d=>d.D, LcTex:'L<sub>c</sub> = D (안지름)', area:d=>Math.PI*d.D*d.L,
+    areaTex:'A = πDL', areaSub:d=>`π × ${F(d.D)} × ${F(d.L)}`,
+    vis:[1e2,1e6], valid:[0,5e6],
+    bands:r=>{const n = r.dT >= 0 ? 0.4 : 0.3; return [
+      {hi:2100, name:'층류 (Sieder–Tate / 완전발달)', short:'층류', tex:'Nu = max{ 3.66, 1.86 (Re Pr D/L)<sup>1/3</sup> (μ<sub>b</sub>/μ<sub>s</sub>)<sup>0.14</sup> }',
+        f:r=>Math.max(3.66, 1.86*c3(r.Re*r.p.Pr*r.d.D/r.d.L)*Math.pow(r.p.mu/r.mus,0.14)),
+        sub:r=>`max{ 3.66, 1.86 × (${F(r.Re)} × ${F(r.p.Pr)} × ${F(r.d.D)}/${F(r.d.L)})<sup>1/3</sup> × (${F(r.p.mu)}/${F(r.mus)})<sup>0.14</sup> }`},
+      {hi:1e4, name:'천이 영역 (Gnielinski)', short:'천이 Gnielinski', turb:true,
+        tex:'Nu = (f/8)(Re − 1000)Pr / [1 + 12.7 (f/8)<sup>1/2</sup>(Pr<sup>2/3</sup> − 1)],&nbsp; f = (0.790 ln Re − 1.64)<sup>−2</sup>',
+        f:r=>{const f=Math.pow(0.790*Math.log(r.Re)-1.64,-2), Pr=r.p.Pr; return (f/8)*(r.Re-1000)*Pr/(1+12.7*Math.sqrt(f/8)*(Math.pow(Pr,2/3)-1));},
+        sub:r=>{const f=Math.pow(0.790*Math.log(r.Re)-1.64,-2); return `f = ${F(f)} → (${F(f/8)})(${F(r.Re)} − 1000)(${F(r.p.Pr)}) / [1 + 12.7 × (${F(f/8)})<sup>1/2</sup> × ((${F(r.p.Pr)})<sup>2/3</sup> − 1)]`;}},
+      {hi:Infinity, turb:true, name:`난류 (Dittus–Boelter, n = ${n})`, short:'난류 Dittus–Boelter', tex:`Nu = 0.023 Re<sup>0.8</sup> Pr<sup>n</sup>,&nbsp; n = ${n} (${n===0.4?'유체 가열':'유체 냉각'})`,
+        f:r=>0.023*Math.pow(r.Re,0.8)*Math.pow(r.p.Pr,n), sub:r=>`0.023 × (${F(r.Re)})<sup>0.8</sup> × (${F(r.p.Pr)})<sup>${n}</sup>`}
+    ];}},
+  vplate:{mode:'natural', name:'수직 평판', sub:'벽·판', axis:'Ra',
+    dims:[['H','높이 H','m',1,0.02,5],['W','폭 W','m',1,0.02,5]],
+    sizeKey:'H', Lc:d=>d.H, LcTex:'L<sub>c</sub> = H (높이)', area:d=>d.H*d.W,
+    areaTex:'A = H × W', areaSub:d=>`${F(d.H)} × ${F(d.W)}`,
+    vis:[1e1,1e14], valid:[0,1e13], bands:vertBands, alt:vertAlt},
+  vcyl:{mode:'natural', name:'수직 원통', sub:'세운 캔·관', axis:'Ra',
+    dims:[['D','지름 D','m',0.075,0.005,1],['H','높이 H','m',0.11,0.02,5]],
+    sizeKey:'H', Lc:d=>d.H, LcTex:'L<sub>c</sub> = H (높이)', area:d=>Math.PI*d.D*d.H,
+    areaTex:'A = πDH (옆면)', areaSub:d=>`π × ${F(d.D)} × ${F(d.H)}`,
+    vis:[1e1,1e14], valid:[0,1e13], bands:vertBands, alt:vertAlt},
+  hcyl:{mode:'natural', name:'수평 원통', sub:'눕힌 관·빵', axis:'Ra',
+    dims:[['D','지름 D','m',0.1,0.002,1],['Lz','길이 L','m',0.3,0.05,10]],
+    sizeKey:'D', Lc:d=>d.D, LcTex:'L<sub>c</sub> = D (지름)', area:d=>Math.PI*d.D*d.Lz,
+    areaTex:'A = πDL', areaSub:d=>`π × ${F(d.D)} × ${F(d.Lz)}`,
+    vis:[1e-3,1e13], valid:[1e-10,1e12],
+    bands:()=>morgan.map(([hi,C,n])=>({hi, turb:hi===Infinity, name:`Morgan (C = ${C}, n = ${n})`, short:`C=${C}, n=${n}`,
+      tex:`Nu = ${C} Ra<sub>D</sub><sup>${n}</sup>`, f:r=>C*Math.pow(r.Ra,n), sub:r=>`${C} × (${F(r.Ra)})<sup>${n}</sup>`})),
+    alt:r=>({name:'Churchill–Chu 수평 원통식', Nu:CCcyl(r)})},
+  hplate:{mode:'natural', name:'수평 평판', sub:'윗면/아랫면', axis:'Ra',
+    dims:[['L1','가로 L₁','m',0.4,0.02,5],['L2','세로 L₂','m',0.3,0.02,5]],
+    sizeKey:'L1', Lc:d=>d.L1*d.L2/(2*(d.L1+d.L2)), LcTex:'L<sub>c</sub> = A/P = L₁L₂ / [2(L₁ + L₂)]', area:d=>d.L1*d.L2,
+    areaTex:'A = L₁ × L₂', areaSub:d=>`${F(d.L1)} × ${F(d.L2)}`,
+    vis:[1e3,1e12],
+    unstable:r=>(r.st.face==='up') === (r.dT>=0),
+    valid:r=>CASES.hplate.unstable(r)?[1e4,1e11]:[1e5,1e11],
+    bands:r=>CASES.hplate.unstable(r) ? [
+      {hi:1e7, name:'윗면 가열·아랫면 냉각형 (층류)', short:'0.54 Ra^¼', tex:'Nu = 0.54 Ra<sub>L</sub><sup>1/4</sup>', f:r=>0.54*Math.pow(r.Ra,0.25), sub:r=>`0.54 × (${F(r.Ra)})<sup>1/4</sup>`},
+      {hi:Infinity, turb:true, name:'윗면 가열·아랫면 냉각형 (난류)', short:'0.15 Ra^⅓', tex:'Nu = 0.15 Ra<sub>L</sub><sup>1/3</sup>', f:r=>0.15*c3(r.Ra), sub:r=>`0.15 × (${F(r.Ra)})<sup>1/3</sup>`}
+    ] : [
+      {hi:Infinity, name:'아랫면 가열·윗면 냉각형', short:'0.27 Ra^¼ (단일식)', tex:'Nu = 0.27 Ra<sub>L</sub><sup>1/4</sup>', f:r=>0.27*Math.pow(r.Ra,0.25), sub:r=>`0.27 × (${F(r.Ra)})<sup>1/4</sup>`}
+    ]},
+  sphn:{mode:'natural', name:'구', sub:'잠긴 구·과일', axis:'Ra',
+    dims:[['D','지름 D','m',0.08,0.002,1]],
+    sizeKey:'D', Lc:d=>d.D, LcTex:'L<sub>c</sub> = D (지름)', area:d=>Math.PI*d.D*d.D,
+    areaTex:'A = πD<sup>2</sup>', areaSub:d=>`π × (${F(d.D)})<sup>2</sup>`,
+    vis:[1e0,1e12], valid:[0,1e11],
+    bands:()=>[{hi:Infinity, name:'Churchill 구 자연대류식', short:'Churchill (단일식)', tex:'Nu = 2 + 0.589 Ra<sup>1/4</sup> / [1 + (0.469/Pr)<sup>9/16</sup>]<sup>4/9</sup>',
+      f:r=>2+0.589*Math.pow(r.Ra,0.25)/Math.pow(1+Math.pow(0.469/r.p.Pr,9/16),4/9),
+      sub:r=>`2 + 0.589 × (${F(r.Ra)})<sup>1/4</sup> / [1 + (0.469/${F(r.p.Pr)})<sup>9/16</sup>]<sup>4/9</sup>`}]}
+};
+for (const id in CASES) CASES[id].id = id;
+
+function corr(r){
+  const C = r.C, st = r.st;
+  if (C.mode === 'forced'){ r.Re = st.u * r.Lc / r.p.nu; r.val = r.Re; }
+  else {
+    r.Gr = G * Math.abs(r.p.beta * r.dT) * Math.pow(r.Lc,3) / (r.p.nu*r.p.nu);
+    r.Ra = r.Gr * r.p.Pr; r.val = r.Ra;
+  }
+  r.bands = C.bands(r);
+  r.idx = r.bands.findIndex(b => r.val < b.hi);
+  if (r.idx < 0) r.idx = r.bands.length - 1;
+  r.band = r.bands[r.idx];
+  r.Nu = r.band.f(r);
+  r.h = r.Nu * r.p.k / r.Lc;
+  r.alt = C.alt ? C.alt(r) : null;
+  r.valid = typeof C.valid === 'function' ? C.valid(r) : C.valid;
+}
+function pipeOut(r){
+  const st = r.st, d = r.d, p = r.p;
+  r.mdot = p.rho * st.u * Math.PI * d.D * d.D / 4;
+  r.NTU = r.h * r.A / (r.mdot * p.cp);
+  r.Tout = st.Ts - (st.Ts - st.Tinf) * Math.exp(-r.NTU);
+  r.q = r.mdot * p.cp * (r.Tout - st.Tinf);
+  const a = st.Ts - st.Tinf, b = st.Ts - r.Tout;
+  r.dTlm = Math.abs(a - b) < 1e-9 * Math.max(1, Math.abs(a)) ? a : (a - b) / Math.log(a / b);
+  r.R = 1 / (r.h * r.A);
+}
+function compute(st, ov){
+  const C = CASES[st.caseId], d = st.dims[st.caseId];
+  const r = {C, d, st, dT: st.Ts - st.Tinf};
+  r.Lc = C.Lc(d); r.A = C.area(d);
+  if (C.id === 'pipe'){
+    let Tb = st.Tinf;
+    for (let i = 0; i < 8; i++){
+      r.p = ov || props(st.fluid, Tb); r.Tref = ov ? ov.T : Tb;
+      r.mus = ov ? r.p.mu : props(st.fluid, st.Ts).mu;
+      corr(r); pipeOut(r);
+      if (ov) break;
+      Tb = (st.Tinf + r.Tout) / 2;
+    }
+  } else {
+    r.Tref = (st.Ts + st.Tinf) / 2;
+    r.p = ov || props(st.fluid, r.Tref);
+    r.mus = ov ? r.p.mu : props(st.fluid, st.Ts).mu;
+    corr(r);
+    r.q = r.h * r.A * r.dT; r.R = 1 / (r.h * r.A);
+  }
+  return r;
+}
+function notesOf(r){
+  const out = [], v = r.valid, ax = r.C.axis;
+  if (r.val < v[0] || r.val > v[1]) out.push(['warn', `${ax} = ${F(r.val)} 은(는) 이 상관식의 적용 범위(${v[0]?F(v[0]):'0'} ~ ${F(v[1])}) 밖이므로 결과는 외삽값입니다.`]);
+  if (r.p.out) out.push(['warn', `물성치 평가 온도 ${F(r.Tref)} °C가 물성표 범위를 벗어나 표의 끝값을 사용했습니다.`]);
+  if (r.C.mode === 'natural' && r.p.beta <= 0) out.push(['warn', '이 온도에서 물의 β가 0 이하입니다(4 °C 부근 밀도 최대). 자연대류 상관식이 맞지 않습니다.']);
+  if (r.C.mode === 'natural' && Math.abs(r.dT) < 0.05) out.push(['warn', '표면과 유체의 온도 차가 거의 없어 자연대류가 일어나지 않습니다.']);
+  if (r.st.caseId === 'fp' && (r.p.Pr < 0.6 || r.p.Pr > 60)) out.push(['warn', `Pr = ${F(r.p.Pr)}: 평판 상관식은 0.6 ≤ Pr ≤ 60에서 성립합니다.`]);
+  if (r.st.caseId === 'vcyl'){
+    const lim = 35 * r.d.H / Math.pow(r.Gr, 0.25);
+    out.push([r.d.D >= lim ? 'alt' : 'warn', `수직 원통을 수직 평판으로 근사하는 조건: D ≥ 35H/Gr<sup>1/4</sup> = ${F(lim)} m → D = ${F(r.d.D)} m ${r.d.D >= lim ? '(만족)' : '(불만족: 곡률 효과로 실제 h가 더 큼)'}`]);
+  }
+  if (r.st.caseId === 'hplate') out.push(['alt', r.C.unstable(r) ? '가열면이 위를 향하거나 냉각면이 아래를 향해 부력 흐름이 면에서 떨어져 나가므로(불안정) 열전달이 활발합니다.' : '가열면이 아래를 향하거나 냉각면이 위를 향해 부력 흐름이 면에 갇히므로(안정) 열전달이 약합니다.']);
+  if (r.st.caseId === 'pipe'){
+    if (r.idx > 0 && r.d.L / r.d.D < 10) out.push(['warn', `L/D = ${F(r.d.L/r.d.D)} < 10: 난류 상관식은 완전 발달 흐름(L/D ≥ 10)을 가정합니다.`]);
+    out.push(['alt', `관 길이에 따라 유체 온도가 변하므로 물성치는 평균 bulk 온도에서 평가하고 반복 계산했습니다.`]);
+  }
+  if (r.alt) out.push(['alt', `비교: ${r.alt.name}로 구하면 Nu = ${F(r.alt.Nu)} (선택한 식과 ${F(100*(r.alt.Nu-r.Nu)/r.Nu,2)}% 차이). 상관식 오차는 보통 ±20~25%입니다.`]);
+  return out;
+}
+</script>
+
+<script>
+/* ================= UI ================= */
+const $ = s => document.querySelector(s);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const S = {mode:'forced', caseId:'cyl', fluid:'air', Ts:120, Tinf:10, u:3, face:'up', dims:{}};
+for (const id in CASES) S.dims[id] = Object.fromEntries(CASES[id].dims.map(d => [d[0], d[3]]));
+
+const PRESETS = [
+  {name:'증기 배관에 부는 바람', caseId:'cyl', fluid:'air', Ts:120, Tinf:10, u:3, dims:{D:0.06, Lz:1}},
+  {name:'송풍 냉각 사과', caseId:'sph', fluid:'air', Ts:25, Tinf:2, u:2, dims:{D:0.08}},
+  {name:'건조기 판 위 열풍', caseId:'fp', fluid:'air', Ts:40, Tinf:80, u:5, dims:{L:1, W:0.5}},
+  {name:'열교환관 속 물 가열', caseId:'pipe', fluid:'water', Ts:90, Tinf:20, u:0.5, dims:{D:0.025, L:3}},
+  {name:'오븐에서 꺼낸 빵', caseId:'hcyl', fluid:'air', Ts:95, Tinf:25, dims:{D:0.1, Lz:0.3}},
+  {name:'냉각수 속 통조림', caseId:'vcyl', fluid:'water', Ts:90, Tinf:20, dims:{D:0.075, H:0.11}},
+  {name:'오븐 바깥 벽', caseId:'vplate', fluid:'air', Ts:60, Tinf:25, dims:{H:1, W:1}},
+  {name:'선반 위 냉동 생선 블록', caseId:'hplate', fluid:'air', Ts:-18, Tinf:20, face:'up', dims:{L1:0.4, L2:0.3}},
+  {name:'물에 잠긴 감자', caseId:'sphn', fluid:'water', Ts:20, Tinf:85, dims:{D:0.06}}
+];
+
+const ICONS = {
+  fp:'<path d="M3 20h28" stroke-width="3"/><path d="M2 8h8M2 13h8" stroke-width="1.4" marker-end=""/><path d="M8 6l3 2-3 2M8 11l3 2-3 2" stroke-width="1.4"/>',
+  cyl:'<circle cx="20" cy="14" r="7" stroke-width="2.4"/><path d="M2 9h7M2 14h6M2 19h7" stroke-width="1.4"/>',
+  sph:'<circle cx="20" cy="14" r="7" stroke-width="2.4"/><circle cx="18" cy="12" r="2" stroke-width="1"/><path d="M2 9h7M2 14h6M2 19h7" stroke-width="1.4"/>',
+  pipe:'<path d="M2 7h30M2 21h30" stroke-width="2.4"/><path d="M6 14h18l-3-2M24 14l-3 2" stroke-width="1.4"/>',
+  vplate:'<path d="M14 3v22" stroke-width="3"/><path d="M19 22c0-6 2-12 4-17M23 5l-2 1M23 5l0 2" stroke-width="1.4"/>',
+  vcyl:'<rect x="11" y="5" width="9" height="19" rx="2" stroke-width="2.2"/><path d="M24 22c0-6 2-12 3-17" stroke-width="1.4"/>',
+  hcyl:'<circle cx="17" cy="18" r="6" stroke-width="2.4"/><path d="M17 10c-1-3 1-5 0-8M13 9c-1-2 0-4-1-6M21 9c1-2 0-4 1-6" stroke-width="1.3"/>',
+  hplate:'<path d="M5 19h24" stroke-width="3"/><path d="M17 15c-1-4 1-7 0-11M11 15c-1-3 0-5-1-8M23 15c1-3 0-5 1-8" stroke-width="1.3"/>',
+  sphn:'<circle cx="17" cy="18" r="6" stroke-width="2.4"/><circle cx="15" cy="16" r="1.6" stroke-width="1"/><path d="M17 10c-1-3 1-5 0-8" stroke-width="1.3"/>'
+};
+function icon(id){ return `<svg viewBox="0 0 34 28" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[id]}</svg>`; }
+
+/* ---- slider+number field ---- */
+function field(parent, o, onChange){
+  const lab = document.createElement('div'); lab.className = 'f';
+  const toS = v => o.log ? 1000*Math.log(v/o.min)/Math.log(o.max/o.min) : 1000*(v-o.min)/(o.max-o.min);
+  const fromS = s => o.log ? o.min*Math.pow(o.max/o.min, s/1000) : o.min + (o.max-o.min)*s/1000;
+  lab.innerHTML = `<label for="${o.id}">${o.label}</label><div class="row"><input type="range" id="${o.id}_r" min="0" max="1000" step="1" aria-label="${o.label.replace(/<[^>]+>/g,'')}"><span class="in"><input id="${o.id}" type="number" step="any"><em>${o.unit}</em></span></div>`;
+  parent.appendChild(lab);
+  const rng = lab.querySelector('input[type=range]'), num = lab.querySelector('input[type=number]');
+  const set = v => { num.value = +(+v).toPrecision(4); rng.value = clamp(toS(v), 0, 1000); };
+  set(o.val);
+  rng.addEventListener('input', () => { const v = +fromS(+rng.value).toPrecision(3); num.value = v; onChange(v); });
+  num.addEventListener('change', () => { const v = parseFloat(num.value); if (!isFinite(v) || (o.positive && v <= 0)) { set(o.val); return; } o.val = v; rng.value = clamp(toS(v),0,1000); onChange(v); });
+  return {set};
+}
+
+/* ---- rail builders ---- */
+function buildPresets(){
+  const box = $('#presets');
+  PRESETS.forEach(p => {
+    const b = document.createElement('button'); b.textContent = p.name;
+    b.onclick = () => {
+      S.caseId = p.caseId; S.mode = CASES[p.caseId].mode; S.fluid = p.fluid; S.Ts = p.Ts; S.Tinf = p.Tinf;
+      if (p.u) S.u = p.u; if (p.face) S.face = p.face;
+      Object.assign(S.dims[p.caseId], p.dims);
+      $('#fluid').value = S.fluid;
+      buildAll(); update(true);
+    };
+    box.appendChild(b);
+  });
+}
+function buildMode(){
+  document.querySelectorAll('#modeSeg button').forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.mode === S.mode);
+    b.onclick = () => {
+      if (S.mode === b.dataset.mode) return;
+      S.mode = b.dataset.mode;
+      S.caseId = S.mode === 'forced' ? 'cyl' : 'hcyl';
+      buildAll(); update(true);
+    };
+  });
+}
+function buildCases(){
+  const g = $('#caseGrid'); g.innerHTML = '';
+  for (const id in CASES){
+    const C = CASES[id]; if (C.mode !== S.mode) continue;
+    const b = document.createElement('button');
+    b.setAttribute('aria-pressed', id === S.caseId);
+    b.innerHTML = `${icon(id)}<span><b>${C.name}</b><small>${C.sub}</small></span>`;
+    b.onclick = () => { S.caseId = id; buildAll(); update(true); };
+    g.appendChild(b);
+  }
+  $('#faceBox').hidden = S.caseId !== 'hplate';
+  document.querySelectorAll('#faceSeg button').forEach(b => {
+    b.setAttribute('aria-pressed', b.dataset.face === S.face);
+    b.onclick = () => { S.face = b.dataset.face; buildCases(); update(true); };
+  });
+}
+function buildCustom(){
+  const box = $('#customBox');
+  box.hidden = S.fluid !== 'custom';
+  if (box.dataset.built) return;
+  box.dataset.built = 1;
+  const defs = [['rho','ρ','kg/m³'],['cp','c<sub>p</sub>','J/kg·K'],['k','k','W/m·K'],['mu','μ','Pa·s'],['beta','β','1/K']];
+  defs.forEach(([key,lab,unit]) => {
+    const l = document.createElement('label'); l.className = 'f'; l.htmlFor = 'cu_' + key;
+    l.innerHTML = `${lab}<span class="in"><input id="cu_${key}" type="number" step="any" value="${CUSTOM[key]}"><em>${unit}</em></span>`;
+    l.querySelector('input').addEventListener('change', e => { const v = parseFloat(e.target.value); if (isFinite(v) && v > 0){ CUSTOM[key] = v; update(); } });
+    box.appendChild(l);
+  });
+}
+function buildConds(){
+  const box = $('#condFields'); box.innerHTML = '';
+  const C = CASES[S.caseId], pipe = S.caseId === 'pipe';
+  C.dims.forEach(([key,label,unit,def,mn,mx]) => {
+    field(box, {id:'dim_'+key, label, unit, val:S.dims[S.caseId][key], min:mn, max:mx, log:true, positive:true}, v => { S.dims[S.caseId][key] = v; update(); });
+  });
+  field(box, {id:'Ts', label:pipe ? '관 벽면 온도 T<sub>s</sub>' : '표면 온도 T<sub>s</sub>', unit:'°C', val:S.Ts, min:-30, max:250}, v => { S.Ts = v; update(); });
+  field(box, {id:'Tinf', label:pipe ? '입구 유체 온도 T<sub>in</sub>' : '유체 온도 T<sub>∞</sub>', unit:'°C', val:S.Tinf, min:-30, max:250}, v => { S.Tinf = v; update(); });
+  if (C.mode === 'forced')
+    field(box, {id:'u', label:pipe ? '평균 유속 u<sub>m</sub>' : '자유흐름 유속 u<sub>∞</sub>', unit:'m/s', val:S.u, min:0.005, max:50, log:true, positive:true}, v => { S.u = v; update(); });
+}
+function buildAll(){ buildMode(); buildCases(); buildCustom(); buildConds(); }
+
+/* ---- renderers ---- */
+function rangeLabel(r){
+  const ax = r.C.axis;
+  if (r.bands.length === 1) return '단일 상관식 (구간 구분 없음)';
+  const lo = r.idx > 0 ? r.bands[r.idx-1].hi : null, hi = r.band.hi;
+  return `${lo !== null ? F(lo) + ' ≤ ' : ''}${ax}${hi < Infinity ? ' < ' + F(hi) : ''}`;
+}
+function renderPath(r, el){
+  const items = [r.C.mode === 'forced' ? '강제대류' : '자연대류', `${r.C.name} · ${r.C.sub}`];
+  if (r.st.caseId === 'hplate'){
+    const hot = r.dT >= 0;
+    items.push(`${r.st.face === 'up' ? '윗면' : '아랫면'} ${hot ? '가열' : '냉각'} (T<sub>s</sub> ${hot ? '>' : '<'} T<sub>∞</sub>)`);
+  }
+  items.push(`${r.C.axis} = ${F(r.val)}`, rangeLabel(r), r.band.name);
+  el.innerHTML = items.map((t, i) => `<span class="${i === items.length-1 ? 'on' : ''}">${t}</span>`).join('<i aria-hidden="true">→</i>');
+}
+function renderRegime(r, el){
+  const C = r.C, [lo, hi] = C.vis, L0 = Math.log10(lo), L1 = Math.log10(hi);
+  const X = v => 30 + (Math.log10(clamp(v, lo, hi)) - L0) / (L1 - L0) * 740;
+  let s = `<svg viewBox="0 0 800 112" role="img" aria-label="${C.axis} 구간별 상관식">`;
+  let prev = lo;
+  r.bands.forEach((b, i) => {
+    const x0 = X(prev), x1 = X(Math.min(b.hi, hi)), on = i === r.idx;
+    s += `<rect x="${x0}" y="34" width="${Math.max(x1-x0,1)}" height="30" rx="4" fill="${on ? 'var(--accent-soft)' : 'var(--panel-2)'}" stroke="${on ? 'var(--accent)' : 'var(--line)'}" stroke-width="${on ? 2 : 1}"/>`;
+    if (x1 - x0 > 54) s += `<text x="${(x0+x1)/2}" y="53" text-anchor="middle" font-size="12" font-family="IBM Plex Sans KR, sans-serif" fill="${on ? 'var(--ink)' : 'var(--muted)'}" font-weight="${on ? 600 : 400}">${b.short}</text>`;
+    prev = b.hi;
+  });
+  const dec = L1 - L0, stp = dec > 10 ? 2 : 1;
+  for (let e = Math.ceil(L0); e <= Math.floor(L1); e += stp){
+    const x = X(Math.pow(10, e));
+    s += `<line x1="${x}" x2="${x}" y1="64" y2="70" stroke="var(--muted)"/><text x="${x}" y="82" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--muted)">10${String(e).split('').map(c=>SUPD[c]).join('')}</text>`;
+  }
+  const v = r.valid, vx0 = X(Math.max(v[0] || lo, lo)), vx1 = X(Math.min(v[1], hi));
+  s += `<line x1="${vx0}" x2="${vx1}" y1="96" y2="96" stroke="var(--good)" stroke-width="3" stroke-linecap="round"/><text x="${vx0}" y="110" font-size="10.5" font-family="IBM Plex Sans KR, sans-serif" fill="var(--good)">적용 범위</text>`;
+  const mx = X(r.val), out = r.val < lo || r.val > hi;
+  s += `<path d="M${mx-7} 18 L${mx+7} 18 L${mx} 30 Z" fill="var(--accent)"/>`;
+  const anchor = mx < 90 ? 'start' : mx > 710 ? 'end' : 'middle';
+  s += `<text x="${mx}" y="13" text-anchor="${anchor}" font-size="12.5" font-weight="600" font-family="IBM Plex Mono, monospace" fill="var(--accent)">${C.axis} = ${Fu(r.val)}${out ? ' (축 범위 밖)' : ''}</text>`;
+  s += '</svg>';
+  el.innerHTML = s;
+}
+function work1HTML(r, given){
+  const st = r.st, C = r.C, p = r.p, pipe = C.id === 'pipe', forced = C.mode === 'forced';
+  let T;
+  if (given) T = `문제에 주어진 물성치 사용 (${pipe ? 'bulk 평균' : '막'} 온도 ${F(r.Tref)} °C 기준)`;
+  else if (pipe) T = `T<sub>b</sub> = (T<sub>in</sub> + T<sub>out</sub>)/2 = (${F(st.Tinf)} + ${F(r.Tout)})/2 = ${F(r.Tref)} °C <span class="mut">(T<sub>out</sub>을 모르므로 반복 계산)</span>`;
+  else T = `T<sub>f</sub> = (T<sub>s</sub> + T<sub>∞</sub>)/2 = (${F(st.Ts)} + ${F(st.Tinf)})/2 = ${F(r.Tref)} °C`;
+  const fname = st.fluid === 'custom' ? '입력 유체' : FLUIDS[st.fluid].name;
+  let P = `${fname}: k = ${F(p.k)} W/m·K, ν = ${F(p.nu)} m²/s, Pr = ${F(p.Pr)}`;
+  if (!forced) P += `, β = ${F(p.beta)} 1/K${st.fluid === 'air' && !given ? ' (이상기체 β = 1/T<sub>f</sub>[K])' : ''}`;
+  if (pipe) P += `, ρ = ${F(p.rho)} kg/m³, c<sub>p</sub> = ${F(p.cp)} J/kg·K`;
+  const li = [];
+  li.push(`<li><b>물성치 평가 온도</b><div class="eq">${T}<br>${P}</div></li>`);
+  li.push(`<li><b>특성 길이</b><div class="eq">${C.LcTex} = ${F(r.Lc)} m</div></li>`);
+  if (forced) li.push(`<li><b>레이놀즈수 Re (관성력/점성력)</b><div class="eq">Re = u L<sub>c</sub> / ν = ${F(st.u)} × ${F(r.Lc)} / ${F(p.nu)} = <b>${F(r.Re)}</b></div></li>`);
+  else li.push(`<li><b>그라스호프수 Gr (부력/점성력)와 레일리수 Ra</b><div class="eq">Gr = g β |ΔT| L<sub>c</sub><sup>3</sup> / ν<sup>2</sup> = 9.81 × ${F(p.beta)} × ${F(Math.abs(r.dT))} × (${F(r.Lc)})<sup>3</sup> / (${F(p.nu)})<sup>2</sup> = ${F(r.Gr)}<br>Ra = Gr × Pr = ${F(r.Gr)} × ${F(p.Pr)} = <b>${F(r.Ra)}</b></div></li>`);
+  li.push(`<li><b>상관식 선택: ${rangeLabel(r)}</b><span class="formula">${r.band.tex}</span><span class="mut" style="font-size:.84rem">${r.band.name}</span></li>`);
+  li.push(`<li><b>누셀수 Nu</b><div class="eq">Nu = ${r.band.sub(r)} = <b>${F(r.Nu)}</b></div></li>`);
+  li.push(`<li><b>열전달계수 h (Nu = hL<sub>c</sub>/k 에서)</b><div class="eq">h = Nu × k / L<sub>c</sub> = ${F(r.Nu)} × ${F(p.k)} / ${F(r.Lc)} = <b>${F(r.h)} W/m²·K</b></div></li>`);
+  return li.join('');
+}
+function work2HTML(r){
+  const st = r.st, C = r.C, d = r.d, li = [];
+  if (C.id === 'pipe'){
+    const p = r.p;
+    li.push(`<li><b>질량유량</b><div class="eq">ṁ = ρ u<sub>m</sub> πD²/4 = ${F(p.rho)} × ${F(st.u)} × π × (${F(d.D)})² / 4 = ${F(r.mdot)} kg/s</div></li>`);
+    li.push(`<li><b>전열 면적</b><div class="eq">${C.areaTex} = ${C.areaSub(d)} = ${F(r.A)} m²</div></li>`);
+    li.push(`<li><b>출구 온도 (벽면 온도 일정)</b><div class="eq">NTU = hA/(ṁc<sub>p</sub>) = ${F(r.h)} × ${F(r.A)} / (${F(r.mdot)} × ${F(p.cp)}) = ${F(r.NTU)}<br>T<sub>out</sub> = T<sub>s</sub> − (T<sub>s</sub> − T<sub>in</sub>) e<sup>−NTU</sup> = ${F(st.Ts)} − (${F(r.dT)}) × e<sup>−${F(r.NTU)}</sup> = <b>${F(r.Tout)} °C</b></div></li>`);
+    li.push(`<li><b>대수평균 온도차</b><div class="eq">ΔT<sub>lm</sub> = (ΔT<sub>in</sub> − ΔT<sub>out</sub>) / ln(ΔT<sub>in</sub>/ΔT<sub>out</sub>) = (${F(st.Ts-st.Tinf)} − ${F(st.Ts-r.Tout)}) / ln(${F(st.Ts-st.Tinf)}/${F(st.Ts-r.Tout)}) = ${F(r.dTlm)} K</div></li>`);
+    li.push(`<li><b>열전달 속도</b><div class="eq">q = ṁ c<sub>p</sub> (T<sub>out</sub> − T<sub>in</sub>) = ${F(r.mdot)} × ${F(p.cp)} × (${F(r.Tout)} − ${F(st.Tinf)}) = <b>${F(r.q)} W</b><br><span class="mut">확인: hAΔT<sub>lm</sub> = ${F(r.h)} × ${F(r.A)} × ${F(r.dTlm)} = ${F(r.h*r.A*r.dTlm)} W</span></div></li>`);
+  } else {
+    li.push(`<li><b>전열 면적</b><div class="eq">${C.areaTex} = ${C.areaSub(d)} = ${F(r.A)} m²</div></li>`);
+    li.push(`<li><b>온도 차</b><div class="eq">ΔT = T<sub>s</sub> − T<sub>∞</sub> = ${F(st.Ts)} − ${F(st.Tinf)} = ${F(r.dT)} K</div></li>`);
+    li.push(`<li><b>뉴턴의 냉각 법칙</b><div class="eq">q = h A ΔT = ${F(r.h)} × ${F(r.A)} × ${F(r.dT)} = <b>${F(r.q)} W</b></div></li>`);
+  }
+  li.push(`<li><b>대류 열저항 (열저항 실험실 1과 연결)</b><div class="eq">R<sub>conv</sub> = 1/(hA) = 1 / (${F(r.h)} × ${F(r.A)}) = ${F(r.R)} K/W</div></li>`);
+  const toFluid = r.q >= 0;
+  li.push(`<li><b>열의 방향</b><div class="dir ${toFluid ? 'hot' : 'cold'}">${C.id === 'pipe' ? (toFluid ? '관 벽 → 유체 (유체가 가열됨)' : '유체 → 관 벽 (유체가 냉각됨)') : (toFluid ? '표면 → 유체 (표면이 열을 잃음)' : '유체 → 표면 (표면이 열을 얻음)')}</div></li>`);
+  return li.join('');
+}
+function renderNotes(r, el){ el.innerHTML = notesOf(r).map(([k, t]) => `<div class="note ${k}">${t}</div>`).join(''); }
+function renderTiles(r){
+  const ax = r.C.axis;
+  $('#tiles').innerHTML = [
+    [ax, F(r.val), r.C.mode === 'forced' ? '' : `Gr = ${F(r.Gr)}`],
+    ['Nu', F(r.Nu), r.band.short],
+    ['h', F(r.h), 'W/m²·K', true],
+    ['q', F(r.q), r.C.id === 'pipe' ? `W · T<sub>out</sub> = ${F(r.Tout)} °C` : 'W', true]
+  ].map(([a,b,c,k]) => `<div class="tile${k ? ' key' : ''}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+}
+function renderProps(r){
+  const p = r.p;
+  $('#propBox').innerHTML = `<span>T = <b>${F(r.Tref)} °C</b></span><span>ρ = <b>${F(p.rho)}</b></span><span>k = <b>${F(p.k)}</b></span><span>c<sub>p</sub> = <b>${F(p.cp)}</b></span><span>ν = <b>${F(p.nu)}</b></span><span>Pr = <b>${F(p.Pr)}</b></span>`;
+}
+
+let R = null;
+function update(reset){
+  R = compute(S);
+  renderTiles(R); renderProps(R);
+  renderPath(R, $('#path')); renderRegime(R, $('#regime'));
+  $('#work1').innerHTML = work1HTML(R); $('#work2').innerHTML = work2HTML(R);
+  renderNotes(R, $('#notes1'));
+  const lo = Math.min(S.Ts, S.Tinf), hi = Math.max(S.Ts, S.Tinf);
+  $('#lgMin').textContent = F(lo) + ' °C'; $('#lgMax').textContent = F(hi) + ' °C';
+  if (reset) simScene.reset();
+  syncDesign();
+}
+
+/* ================= SCENE ================= */
+const HEAT = [[0,[43,108,176]],[0.25,[34,166,199]],[0.5,[242,201,76]],[0.75,[242,153,74]],[1,[214,69,69]]];
+function heat(t){
+  t = clamp(t, 0, 1);
+  for (let i = 0; i < HEAT.length - 1; i++){
+    const [a, ca] = HEAT[i], [b, cb] = HEAT[i+1];
+    if (t <= b){ const u = (t - a)/(b - a); return `rgb(${ca.map((c,j)=>Math.round(c+u*(cb[j]-c))).join(',')})`; }
+  }
+  return 'rgb(214,69,69)';
+}
+const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function Scene(canvas, getR){
+  const ctx = canvas.getContext('2d');
+  let W = 640, H = 330, parts = [], g = null, last = 0, paused = false, t = 0;
+  const N = 260;
+  function resize(){
+    const w = canvas.clientWidth || 640;
+    W = w; H = clamp(Math.round(w * 0.5), 240, 460);
+    canvas.style.height = H + 'px';
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function build(r){
+    const st = r.st, id = st.caseId, hot = r.dT >= 0, buoy = hot ? -1 : 1, forced = r.C.mode === 'forced';
+    const turb = !!r.band.turb;
+    const U = forced ? clamp(45 + 38*Math.log10(1 + st.u*3), 45, 175) : 0;
+    const lv = Math.log10(Math.max(forced ? r.Re : r.Ra, 10));
+    const Vb = forced ? 0 : clamp(22 + 7*lv, 30, 110);
+    const o = {id, hot, buoy, forced, turb, U, Vb, r};
+    if (id === 'fp'){
+      o.y0 = H*0.62; o.xa = W*0.14; o.xb = W*0.86; o.th = 8;
+      const xc = r.Re > 5e5 ? o.xa + (o.xb-o.xa)*5e5/r.Re : Infinity; o.xc = xc;
+      const dm = H*0.16;
+      o.delta = x => { if (x < o.xa) return 2; const s = (Math.min(x,o.xb)-o.xa)/(o.xb-o.xa); if (x < xc) return 4 + dm*0.7*Math.sqrt(s); const sc = (xc-o.xa)/(o.xb-o.xa); return 4 + dm*0.7*Math.sqrt(sc) + dm*1.4*(s-sc); };
+      o.solid = (x,y) => x >= o.xa && x <= o.xb && Math.abs(y-o.y0) <= o.th/2;
+      o.dist = (x,y) => (x < o.xa || x > o.xb) ? 1e9 : Math.abs(y-o.y0) - o.th/2;
+      o.field = (x,y) => { let vx = U, vy = 0; if (x >= o.xa){ const d = Math.abs(y-o.y0)-o.th/2, dl = o.delta(x); vx = U*clamp(d/dl, 0.12, 1); if (x > xc && d < dl*1.2){ vy = U*0.2*Math.sin(t*5 + x*0.09 + y*0.2); } } return [vx, vy]; };
+      o.spawn = p => { p.x = -Math.random()*20; p.y = Math.random()*H; };
+    } else if (id === 'cyl' || id === 'sph'){
+      o.cx = W*0.4; o.cy = H*0.5; o.R = H*0.17;
+      o.solid = (x,y) => Math.hypot(x-o.cx, y-o.cy) < o.R;
+      o.dist = (x,y) => Math.hypot(x-o.cx, y-o.cy) - o.R;
+      o.delta = (x,y) => { const rx = x-o.cx, rr = Math.hypot(rx, y-o.cy) || 1, c = rx/rr; return o.R*(0.1 + 0.3*(1+c)/2)*(r.Re < 40 ? 1.6 : 1); };
+      o.field = (x,y) => { const rx = x-o.cx, ry = y-o.cy, r2 = rx*rx+ry*ry, R2 = o.R*o.R; if (r2 < R2) return [0,0];
+        const r4 = r2*r2; let vx = U*(1 - R2*(rx*rx-ry*ry)/r4), vy = -U*2*R2*rx*ry/r4;
+        if (r.Re > 40 && rx > 0){ const w = Math.exp(-(ry*ry)/(R2*1.2)); const amp = r.Re > 4000 ? 0.65 : 0.35; vx *= 1 - 0.6*w; vy += U*amp*w*Math.sin(t*4 - rx*0.05); }
+        return [vx, vy]; };
+      o.spawn = p => { p.x = -Math.random()*20; p.y = Math.random()*H; };
+    } else if (id === 'pipe'){
+      o.xa = W*0.05; o.xb = W*0.95; o.cy = H*0.5; o.R = H*0.25;
+      const lam = r.idx === 0; o.lam = lam;
+      o.solid = (x,y) => Math.abs(y-o.cy) >= o.R - 1;
+      o.dist = (x,y) => o.R - Math.abs(y-o.cy);
+      o.delta = x => { const s = clamp((x-o.xa)/(o.xb-o.xa), 0, 1); return lam ? o.R*Math.min(1, 0.12 + 1.0*Math.sqrt(s)) : o.R*0.25; };
+      o.field = (x,y) => { const e = Math.abs(y-o.cy)/o.R; const V = U*0.6;
+        const vx = lam ? 2*V*(1-e*e) : 1.2*V*Math.pow(Math.max(1-e,0), 1/7);
+        const vy = lam ? 0 : V*0.15*Math.sin(t*6 + x*0.07 + y*0.3); return [vx + 4, vy]; };
+      o.bulk = x => { const s = clamp((x-o.xa)/(o.xb-o.xa), 0, 1); return st.Ts - (st.Ts - st.Tinf)*Math.exp(-r.NTU*s); };
+      o.spawn = (p, init) => { p.x = init ? o.xa + Math.random()*(o.xb-o.xa) : o.xa; p.y = o.cy + (Math.random()*2-1)*(o.R-3); };
+    } else if (id === 'vplate' || id === 'vcyl'){
+      o.ya = H*0.14; o.yb = H*0.86; o.cx = W*0.42; o.hw = id === 'vplate' ? 5 : W*0.07;
+      const dm = W*0.055;
+      o.delta = (x,y) => { const s = hot ? (o.yb-y)/(o.yb-o.ya) : (y-o.ya)/(o.yb-o.ya); const sc = clamp(s,0,1); return 4 + dm*Math.pow(sc,0.25)*(turb && sc > 0.5 ? 1 + 1.4*(sc-0.5) : 1); };
+      o.solid = (x,y) => Math.abs(x-o.cx) <= o.hw && y >= o.ya && y <= o.yb;
+      o.dist = (x,y) => (y < o.ya || y > o.yb) ? 1e9 : Math.abs(x-o.cx) - o.hw;
+      o.field = (x,y) => { const dx = Math.abs(x-o.cx) - o.hw, sx = Math.sign(x-o.cx) || 1; let vx = 0, vy = 0;
+        const inY = y >= o.ya && y <= o.yb, ye = hot ? o.ya : o.yb, plume = hot ? y < o.ya : y > o.yb;
+        if (inY){ const dl = o.delta(x,y), eta = Math.max(dx,0)/dl; const f = eta < 1 ? 0.25 + 0.75*eta : Math.exp(1-eta);
+          vy = buoy*Vb*f; vx = eta > 0.6 ? -sx*Vb*0.14*Math.exp(-eta/3) : 0;
+          if (turb && eta < 2) vx += Vb*0.25*Math.sin(t*5 + y*0.12); }
+        else if (plume){ const dl = o.delta(x, hot ? o.ya+1 : o.yb-1) + Math.abs(y-ye)*0.3; const e = Math.max(dx,0)/dl; vy = buoy*Vb*Math.exp(-e*e*0.5); vx = -sx*Vb*0.1*Math.exp(-e/2); }
+        else { vx = -sx*Vb*0.07; vy = buoy*Vb*0.08; }
+        return [vx, vy]; };
+      o.spawn = p => { p.x = Math.random()*W; p.y = Math.random()*H; };
+    } else if (id === 'hcyl' || id === 'sphn'){
+      o.cx = W*0.5; o.cy = hot ? H*0.64 : H*0.36; o.R = H*0.16;
+      o.solid = (x,y) => Math.hypot(x-o.cx, y-o.cy) < o.R;
+      o.dist = (x,y) => Math.hypot(x-o.cx, y-o.cy) - o.R;
+      o.delta = (x,y) => { const ry = y-o.cy, rr = Math.hypot(x-o.cx, ry) || 1, c = (ry/rr)*(hot ? 1 : -1); return o.R*(0.12 + 0.35*(1-c)/2); };
+      o.field = (x,y) => { const rx = x-o.cx, ry = y-o.cy, r2 = rx*rx+ry*ry, R2 = o.R*o.R; if (r2 < R2) return [0,0];
+        const r4 = r2*r2, V = Vb*0.5;
+        let vy = buoy*V*(1 - R2*(ry*ry-rx*rx)/r4), vx = buoy*(-V*2*R2*rx*ry/r4);
+        if (ry*buoy > 0) vy += buoy*Vb*0.8*Math.exp(-Math.pow(rx/(o.R*0.6), 2));
+        if (turb && ry*buoy > 0) vx += Vb*0.2*Math.sin(t*4 + ry*0.08);
+        return [vx, vy]; };
+      o.spawn = p => { p.x = Math.random()*W; p.y = Math.random()*H; };
+    } else if (id === 'hplate'){
+      o.y0 = H*0.52; o.xa = W*0.2; o.xb = W*0.8; o.xc = W*0.5; o.th = 10;
+      const faceUp = st.face === 'up', sig = faceUp ? -1 : 1, half = (o.xb-o.xa)/2;
+      o.faceUp = faceUp; o.sig = sig; o.unstable = (faceUp && hot) || (!faceUp && !hot);
+      o.solid = (x,y) => x >= o.xa && x <= o.xb && Math.abs(y-o.y0) <= o.th/2;
+      o.dist = (x,y) => { if (x < o.xa || x > o.xb) return 1e9; const d = sig*(y-o.y0) - o.th/2; return d < 0 ? 1e9 : d; };
+      o.delta = x => { const s = Math.abs(x-o.xc)/half; return o.unstable ? 6 + H*0.05*(1-0.6*s) : 6 + H*0.06*(1-0.5*s); };
+      o.field = (x,y) => { const d = sig*(y-o.y0) - o.th/2, sx = (x-o.xc)/half; let vx = 0, vy = 0;
+        if (o.unstable){
+          if (d > 0){ const near = Math.exp(-d/(H*0.07)), col = Math.exp(-Math.pow((x-o.xc)/(W*0.07), 2));
+            if (Math.abs(sx) <= 1.15) vx = -Vb*0.7*clamp(sx,-1,1)*near;
+            vy = sig*Vb*1.2*col*(1 - near*0.5) + sig*Vb*0.15*near - sig*Vb*0.08*(1-col);
+            if (turb) vx += Vb*0.2*Math.sin(t*4 + d*0.1);
+          } else { vy = -sig*Vb*0.06; }
+        } else {
+          if (d > 0 && Math.abs(sx) <= 1){ const near = Math.exp(-d/(H*0.06)); vx = Vb*0.6*sx*near + Vb*0.05*sx; vy = -sig*Vb*0.14; }
+          else if (Math.abs(sx) > 1){ const dx = Math.abs(x-o.xc) - half; vy = -sig*Vb*0.9*Math.exp(-dx/(W*0.05)); vx = Math.sign(sx)*Vb*0.08; }
+          else { vy = -sig*Vb*0.05; }
+        }
+        return [vx, vy]; };
+      o.spawn = p => { p.x = Math.random()*W; p.y = Math.random()*H; };
+    }
+    return o;
+  }
+  function spawn(p, init){
+    for (let k = 0; k < 20; k++){
+      g.spawn(p, init);
+      if (init && g.forced && g.id !== 'pipe'){ p.x = Math.random()*W; }
+      if (!g.solid(p.x, p.y) || g.id === 'pipe') break;
+    }
+    p.T = g.r.st.Tinf; p.age = 0; p.life = g.forced ? 1e9 : 4 + Math.random()*6; p.vx = 0; p.vy = 0;
+  }
+  function reset(){
+    const r = getR(); if (!r) return;
+    resize(); g = build(r); parts = [];
+    for (let i = 0; i < N; i++){ const p = {}; spawn(p, true); parts.push(p); }
+  }
+  function step(dt){
+    const r = g.r, st = r.st;
+    for (const p of parts){
+      const [vx, vy] = g.field(p.x, p.y);
+      let nx = p.x + vx*dt, ny = p.y + vy*dt;
+      if (g.solid(nx, ny)){
+        if (g.id === 'pipe') ny = p.y;
+        else if (!g.solid(nx, p.y)) ny = p.y;
+        else if (!g.solid(p.x, ny)) nx = p.x;
+        else { nx = p.x; ny = p.y; }
+      }
+      p.x = nx; p.y = ny; p.vx = vx; p.vy = vy; p.age += dt;
+      const d = g.dist(p.x, p.y), dl = g.delta(p.x, p.y);
+      if (d < dl){ const w = 1 - Math.max(d,0)/dl; p.T += (st.Ts - p.T)*(1 - Math.exp(-dt*4.5*w)); }
+      else { const amb = g.id === 'pipe' ? g.bulk(p.x) : st.Tinf; p.T += (amb - p.T)*(1 - Math.exp(-dt*(g.id === 'pipe' ? 0.8 : 0.35))); }
+      const out = p.x < -25 || p.x > W + 10 || p.y < -10 || p.y > H + 10 || (g.id === 'pipe' && p.x > g.xb);
+      if (out || p.age > p.life || (g.id !== 'pipe' && g.solid(p.x, p.y))) spawn(p, false);
+    }
+  }
+  function tok(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function draw(){
+    const r = g.r, st = r.st;
+    const lo = Math.min(st.Ts, st.Tinf), span = Math.max(Math.abs(st.Ts - st.Tinf), 0.1);
+    const nT = T => (T - lo)/span;
+    const ink = tok('--ink'), muted = tok('--muted'), scene = tok('--scene'), line = tok('--line');
+    ctx.fillStyle = scene; ctx.fillRect(0, 0, W, H);
+    const sc = heat(nT(st.Ts));
+    if (g.id === 'pipe'){
+      const grd = ctx.createLinearGradient(g.xa, 0, g.xb, 0);
+      for (let i = 0; i <= 10; i++){ const x = g.xa + (g.xb-g.xa)*i/10; grd.addColorStop(i/10, heat(nT(g.bulk(x)))); }
+      ctx.globalAlpha = 0.22; ctx.fillStyle = grd; ctx.fillRect(g.xa, g.cy - g.R, g.xb - g.xa, 2*g.R); ctx.globalAlpha = 1;
+    }
+    // particles
+    ctx.lineWidth = 2; ctx.lineCap = 'round';
+    for (const p of parts){
+      ctx.strokeStyle = heat(nT(p.T));
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x - p.vx*0.07, p.y - p.vy*0.07); ctx.stroke();
+    }
+    // solids
+    ctx.fillStyle = sc; ctx.strokeStyle = ink; ctx.lineWidth = 1.2;
+    if (g.id === 'fp'){ ctx.fillRect(g.xa, g.y0 - g.th/2, g.xb - g.xa, g.th); ctx.strokeRect(g.xa, g.y0 - g.th/2, g.xb - g.xa, g.th);
+      if (isFinite(g.xc) && g.xc < g.xb){ ctx.setLineDash([4,4]); ctx.strokeStyle = muted; ctx.beginPath(); ctx.moveTo(g.xc, g.y0 - g.th); ctx.lineTo(g.xc, g.y0 - H*0.35); ctx.stroke(); ctx.setLineDash([]); label('천이 x꜀', g.xc + 4, g.y0 - H*0.32, muted, 'left'); }
+      dimLine(g.xa, g.xb, g.y0 + 22, `L = ${F(r.d.L)} m`);
+    } else if (g.id === 'cyl' || g.id === 'sph' || g.id === 'hcyl' || g.id === 'sphn'){
+      const sph = g.id === 'sph' || g.id === 'sphn';
+      if (sph){ const rg = ctx.createRadialGradient(g.cx - g.R*0.35, g.cy - g.R*0.35, g.R*0.1, g.cx, g.cy, g.R); rg.addColorStop(0, 'rgba(255,255,255,.55)'); rg.addColorStop(0.35, sc); rg.addColorStop(1, sc); ctx.fillStyle = rg; }
+      ctx.beginPath(); ctx.arc(g.cx, g.cy, g.R, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+      label(`D = ${F(r.d.D)} m`, g.cx, g.cy + g.R + 18, ink, 'center');
+      label(sph ? '(구)' : '(원통 단면)', g.cx, g.cy + 4, '#1b1b1b', 'center');
+    } else if (g.id === 'pipe'){
+      ctx.fillRect(g.xa, g.cy - g.R - 9, g.xb - g.xa, 9); ctx.fillRect(g.xa, g.cy + g.R, g.xb - g.xa, 9);
+      ctx.strokeRect(g.xa, g.cy - g.R - 9, g.xb - g.xa, 9); ctx.strokeRect(g.xa, g.cy + g.R, g.xb - g.xa, 9);
+      label(`T_in = ${F(st.Tinf)} °C`, g.xa + 4, g.cy - g.R - 16, ink, 'left');
+      label(`T_out = ${F(r.Tout)} °C`, g.xb - 4, g.cy - g.R - 16, ink, 'right');
+      label(`벽 T_s = ${F(st.Ts)} °C · D = ${F(r.d.D)} m · L = ${F(r.d.L)} m`, W/2, g.cy + g.R + 28, muted, 'center');
+      label(g.lam ? '포물선 속도 분포 (층류)' : '납작한 속도 분포 (난류)', W/2, H - 8, muted, 'center');
+    } else if (g.id === 'vplate' || g.id === 'vcyl'){
+      if (g.id === 'vcyl'){ ctx.fillRect(g.cx - g.hw, g.ya, 2*g.hw, g.yb - g.ya); ctx.strokeRect(g.cx - g.hw, g.ya, 2*g.hw, g.yb - g.ya);
+        ctx.beginPath(); ctx.ellipse(g.cx, g.ya, g.hw, 5, 0, 0, Math.PI*2); ctx.fill(); ctx.stroke(); }
+      else { ctx.fillRect(g.cx - g.hw, g.ya, 2*g.hw, g.yb - g.ya); ctx.strokeRect(g.cx - g.hw, g.ya, 2*g.hw, g.yb - g.ya); }
+      vdim(g.cx - g.hw - 26, g.ya, g.yb, `H = ${F(r.d.H)} m`);
+    } else if (g.id === 'hplate'){
+      ctx.fillRect(g.xa, g.y0 - g.th/2, g.xb - g.xa, g.th); ctx.strokeRect(g.xa, g.y0 - g.th/2, g.xb - g.xa, g.th);
+      const iy = g.faceUp ? g.y0 + g.th/2 : g.y0 - g.th/2 - 9;
+      ctx.fillStyle = tok('--panel-2'); ctx.fillRect(g.xa, iy, g.xb - g.xa, 9); ctx.strokeStyle = muted;
+      ctx.beginPath(); for (let x = g.xa; x < g.xb; x += 9){ ctx.moveTo(x, iy + 9); ctx.lineTo(x + 9, iy); } ctx.stroke();
+      label('단열', g.xb + 6, iy + 8, muted, 'left');
+      label(g.unstable ? '불안정: 부력 흐름이 면에서 떠남' : '안정: 부력 흐름이 면에 갇힘', W/2, g.faceUp ? g.y0 + 34 : g.y0 - 30, muted, 'center');
+    }
+    // labels
+    label(`${g.id === 'pipe' ? '' : 'T∞ = ' + F(st.Tinf) + ' °C   '}${g.id === 'pipe' ? '' : 'T_s = ' + F(st.Ts) + ' °C'}`, 10, 18, ink, 'left');
+    if (g.forced && g.id !== 'pipe'){ arrow(14, H - 22, 58, H - 22, ink); label(`u∞ = ${F(st.u)} m/s`, 64, H - 18, ink, 'left'); }
+    if (g.id === 'pipe'){ arrow(14, 18, 58, 18, ink); label(`u_m = ${F(st.u)} m/s`, 64, 22, ink, 'left'); }
+    if (!g.forced){ arrow(W - 22, 14, W - 22, 52, ink); label('g', W - 30, 38, ink, 'right'); }
+    label(`${r.C.axis} = ${Fu(r.val)}  →  ${r.band.short}`, W - 10, H - 8, muted, 'right');
+  }
+  function label(s, x, y, col, al){ ctx.font = '500 12px "IBM Plex Sans KR", system-ui, sans-serif'; ctx.fillStyle = col; ctx.textAlign = al; ctx.fillText(s, x, y); }
+  function arrow(x0, y0, x1, y1, col){ ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+    const a = Math.atan2(y1-y0, x1-x0); ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 - 8*Math.cos(a-0.4), y1 - 8*Math.sin(a-0.4)); ctx.lineTo(x1 - 8*Math.cos(a+0.4), y1 - 8*Math.sin(a+0.4)); ctx.closePath(); ctx.fill(); }
+  function dimLine(x0, x1, y, s){ const c = tok('--muted'); ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.moveTo(x0, y-4); ctx.lineTo(x0, y+4); ctx.moveTo(x1, y-4); ctx.lineTo(x1, y+4); ctx.stroke(); label(s, (x0+x1)/2, y + 15, c, 'center'); }
+  function vdim(x, y0, y1, s){ const c = tok('--muted'); ctx.strokeStyle = c; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.moveTo(x-4, y0); ctx.lineTo(x+4, y0); ctx.moveTo(x-4, y1); ctx.lineTo(x+4, y1); ctx.stroke();
+    ctx.save(); ctx.translate(x - 6, (y0+y1)/2); ctx.rotate(-Math.PI/2); label(s, 0, 0, c, 'center'); ctx.restore(); }
+  function frame(ts){
+    requestAnimationFrame(frame);
+    if (canvas.offsetParent === null) { last = ts; return; }
+    const r = getR(); if (!r) return;
+    if (!g) reset();
+    if (canvas.clientWidth && Math.abs(canvas.clientWidth - W) > 2){ reset(); }
+    // refresh geometry params without losing particles
+    if (g.r !== r){ const keep = parts; g = build(r); parts = keep; for (const p of parts) if (g.id !== 'pipe' && g.solid(p.x, p.y)) spawn(p, true); }
+    const dt = Math.min(0.05, (ts - last)/1000 || 0.016); last = ts;
+    if (!paused){ const sub = reduceMotion ? 0.35 : 1; t += dt*sub; step(dt*sub); }
+    draw();
+  }
+  requestAnimationFrame(frame);
+  return {reset, setPaused(v){ paused = v; }};
+}
+
+const simScene = Scene($('#scene'), () => R);
+$('#pauseBtn').onclick = e => { const v = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', v); e.currentTarget.textContent = v ? '재생' : '일시정지'; simScene.setPaused(v); };
+
+/* ================= DESIGN ================= */
+function unknowns(){
+  const C = CASES[S.caseId], list = [];
+  if (C.mode === 'forced') list.push(['u', S.caseId === 'pipe' ? '평균 유속 u_m (m/s)' : '자유흐름 유속 u∞ (m/s)']);
+  list.push(['Ts', '표면(벽) 온도 Ts (°C)']);
+  const dk = C.dims.find(d => d[0] === C.sizeKey);
+  list.push(['size', dk[1] + ' (m)']);
+  return list;
+}
+function syncDesign(){
+  const C = CASES[S.caseId], r = R;
+  const sel = $('#unk'), prev = sel.value;
+  sel.innerHTML = unknowns().map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+  if ([...sel.options].some(o => o.value === prev)) sel.value = prev;
+  const rows = [['대류', C.mode === 'forced' ? '강제대류' : '자연대류'], ['형상', `${C.name} · ${C.sub}`], ['유체', S.fluid === 'custom' ? '직접 입력' : FLUIDS[S.fluid].name]];
+  C.dims.forEach(([k, l, u]) => rows.push([l, `${F(S.dims[S.caseId][k])} ${u}`]));
+  if (S.caseId === 'hplate') rows.push(['전열면', S.face === 'up' ? '윗면' : '아랫면']);
+  rows.push([S.caseId === 'pipe' ? 'T_s (벽)' : 'T_s', F(S.Ts) + ' °C'], [S.caseId === 'pipe' ? 'T_in' : 'T∞', F(S.Tinf) + ' °C']);
+  if (C.mode === 'forced') rows.push(['유속', F(S.u) + ' m/s']);
+  rows.push(['현재 q', F(r.q) + ' W']);
+  $('#dSum').innerHTML = rows.map(([a, b]) => `<div><span>${a}</span><span>${b}</span></div>`).join('');
+  if (!$('#tq').dataset.touched) $('#tq').value = +(Math.abs(r.q)*1.5).toPrecision(3);
+}
+$('#tq').addEventListener('input', e => e.target.dataset.touched = 1);
+function designSpace(unk){
+  const C = CASES[S.caseId];
+  const sgn = (S.Ts - S.Tinf) >= 0 ? 1 : -1;
+  if (unk === 'u') return {log:true, lo:S.fluid === 'air' ? 0.01 : 0.001, hi:S.fluid === 'air' ? 50 : 10, set:(st,v)=>{st.u = v;}, label:C.mode === 'forced' && S.caseId === 'pipe' ? 'u_m (m/s)' : 'u∞ (m/s)', fmt:v=>`${F(v)} m/s`};
+  if (unk === 'Ts'){
+    const hi = S.fluid === 'water' ? Math.max(1, sgn > 0 ? 100 - S.Tinf : S.Tinf - 0.5) : 200;
+    return {log:false, lo:0.2, hi, set:(st,v)=>{st.Ts = S.Tinf + sgn*v;}, label:'|Ts − T∞| (K)', fmt:v=>`ΔT = ${F(v)} K → Ts = ${F(S.Tinf + sgn*v)} °C`};
+  }
+  const k = C.sizeKey, dk = C.dims.find(d => d[0] === k);
+  return {log:true, lo:dk[4], hi:dk[5]*2, set:(st,v)=>{st.dims[S.caseId][k] = v;}, label:dk[1].replace(/<[^>]+>/g,'') + ' (m)', fmt:v=>`${dk[1]} = ${F(v)} m`};
+}
+function cloneState(){ return JSON.parse(JSON.stringify(S)); }
+function qAt(sp, v){ const st = cloneState(); sp.set(st, v); return compute(st); }
+function solveDesign(){
+  const unk = $('#unk').value, target = Math.abs(parseFloat($('#tq').value));
+  const sp = designSpace(unk);
+  const xs = [], ys = [];
+  for (let i = 0; i <= 140; i++){
+    const v = sp.log ? sp.lo*Math.pow(sp.hi/sp.lo, i/140) : sp.lo + (sp.hi-sp.lo)*i/140;
+    xs.push(v); ys.push(Math.abs(qAt(sp, v).q));
+  }
+  let sol = null;
+  if (isFinite(target) && target > 0){
+    for (let i = 0; i < xs.length - 1; i++){
+      if ((ys[i]-target)*(ys[i+1]-target) <= 0){
+        let a = xs[i], b = xs[i+1], fa = ys[i]-target;
+        for (let k = 0; k < 60; k++){ const m = sp.log ? Math.sqrt(a*b) : (a+b)/2, fm = Math.abs(qAt(sp, m).q) - target; if (fa*fm <= 0) b = m; else { a = m; fa = fm; } }
+        sol = sp.log ? Math.sqrt(a*b) : (a+b)/2; break;
+      }
+    }
+  }
+  drawPlot(xs, ys, target, sol, sp);
+  if (sol === null){
+    $('#dRes').innerHTML = `<p class="note warn">탐색 범위(${F(sp.lo)} ~ ${F(sp.hi)})에서 |q| = ${F(target)} W를 만들 수 없습니다. 그래프에서 도달 가능한 q 범위를 확인하고 목표를 조정하세요.${S.caseId === 'pipe' ? ' 관 내부 흐름은 q가 ṁc<sub>p</sub>(T<sub>s</sub> − T<sub>in</sub>)를 넘을 수 없습니다.' : ''}</p>`;
+    ['#dPath','#dWork1','#dNotes','#dWork2'].forEach(s => $(s).innerHTML = '');
+    return;
+  }
+  const r = qAt(sp, sol);
+  $('#dRes').innerHTML = `<div class="mut" style="font-size:.86rem">목표 |q| = ${F(target)} W 를 만족하는 값</div><div class="result">${sp.fmt(sol)}</div><div class="mut" style="font-size:.86rem;margin-top:4px">이때 ${r.C.axis} = ${F(r.val)}, Nu = ${F(r.Nu)}, h = ${F(r.h)} W/m²·K · 이분법으로 계산</div>`;
+  renderPath(r, $('#dPath')); $('#dWork1').innerHTML = work1HTML(r); renderNotes(r, $('#dNotes')); $('#dWork2').innerHTML = work2HTML(r);
+}
+function drawPlot(xs, ys, target, sol, sp){
+  const cv = $('#dplot'), ctx = cv.getContext('2d');
+  const W = cv.clientWidth || 600, H = clamp(Math.round(W*0.48), 220, 380);
+  cv.style.height = H + 'px'; const dpr = window.devicePixelRatio || 1; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  const tk = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const ink = tk('--ink'), muted = tk('--muted'), line = tk('--line'), acc = tk('--accent'), scene = tk('--scene');
+  ctx.fillStyle = scene; ctx.fillRect(0,0,W,H);
+  const L = 62, Rm = 16, T = 16, B = 42, pw = W-L-Rm, ph = H-T-B;
+  const ymax = Math.max(...ys, isFinite(target) ? target : 0)*1.1 || 1;
+  const lx0 = sp.log ? Math.log10(sp.lo) : sp.lo, lx1 = sp.log ? Math.log10(sp.hi) : sp.hi;
+  const X = v => L + ((sp.log ? Math.log10(v) : v) - lx0)/(lx1 - lx0)*pw;
+  const Y = v => T + ph - v/ymax*ph;
+  ctx.font = '11px "IBM Plex Mono", monospace'; ctx.strokeStyle = line; ctx.fillStyle = muted; ctx.lineWidth = 1;
+  const nice = m => { const p = Math.pow(10, Math.floor(Math.log10(m))), f = m/p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10)*p; };
+  const yst = nice(ymax/5);
+  ctx.textAlign = 'right';
+  for (let v = 0; v <= ymax; v += yst){ const y = Y(v); ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(L+pw, y); ctx.stroke(); ctx.fillText(+v.toPrecision(3), L-6, y+4); }
+  ctx.textAlign = 'center';
+  if (sp.log){ for (let e = Math.ceil(lx0); e <= Math.floor(lx1); e++){ const x = X(Math.pow(10,e)); ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T+ph); ctx.stroke(); ctx.fillText(String(+Math.pow(10,e).toPrecision(1)), x, T+ph+15); } }
+  else { const xst = nice((sp.hi-sp.lo)/6); for (let v = Math.ceil(sp.lo/xst)*xst; v <= sp.hi; v += xst){ const x = X(v); ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, T+ph); ctx.stroke(); ctx.fillText(+v.toPrecision(3), x, T+ph+15); } }
+  ctx.fillStyle = ink; ctx.font = '500 12px "IBM Plex Sans KR", sans-serif';
+  ctx.fillText(sp.label, L + pw/2, H - 6);
+  ctx.save(); ctx.translate(14, T + ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('|q| (W)', 0, 0); ctx.restore();
+  ctx.strokeStyle = acc; ctx.lineWidth = 2.2; ctx.beginPath(); xs.forEach((x, i) => { const px = X(x), py = Y(ys[i]); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }); ctx.stroke();
+  if (isFinite(target)){ ctx.setLineDash([6,5]); ctx.strokeStyle = muted; ctx.lineWidth = 1.3; ctx.beginPath(); ctx.moveTo(L, Y(target)); ctx.lineTo(L+pw, Y(target)); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = muted; ctx.textAlign = 'left'; ctx.font = '11px "IBM Plex Mono", monospace'; ctx.fillText(`목표 ${+target.toPrecision(4)} W`, L+6, Y(target)-6); }
+  if (sol !== null){ ctx.fillStyle = acc; ctx.beginPath(); ctx.arc(X(sol), Y(target), 6, 0, Math.PI*2); ctx.fill(); ctx.strokeStyle = tk('--panel'); ctx.lineWidth = 2; ctx.stroke(); }
+}
+$('#solveBtn').onclick = solveDesign;
+
+/* ================= GAME ================= */
+const GAME = {score:0, streak:0, count:0, cur:null, stage:0, tries:0};
+const STORIES = {
+  fp:'건조기 안 스테인리스 판 위로 공기가 판과 나란히 흐릅니다.',
+  cyl:'공장 바깥에 노출된 배관에 바람이 직각으로 불고 있습니다.',
+  sph:'선별기 위의 둥근 과일에 송풍기 바람이 불고 있습니다.',
+  pipe:'열교환기의 원관 속을 유체가 흐르며 관 벽으로부터 열을 받거나 잃습니다.',
+  vplate:'공정 장비의 수직 벽이 주변 유체와 자연대류로 열을 주고받습니다.',
+  vcyl:'세워 놓은 캔이 주변 유체 속에서 자연대류로 열을 주고받습니다.',
+  hcyl:'눕혀 놓은 원통형 식품이 주변 유체 속에서 자연대류로 열을 주고받습니다.',
+  hplate:'수평으로 놓인 판의 한쪽 면만 열을 주고받고 반대면은 단열되어 있습니다.',
+  sphn:'둥근 식품이 정지한 유체 속에 놓여 자연대류로 열을 주고받습니다.'
+};
+const rnd = (a, b) => a + Math.random()*(b-a);
+const r2 = (x, s) => +x.toPrecision(s || 2);
+function genProblem(){
+  const ids = Object.keys(CASES), id = ids[Math.floor(Math.random()*ids.length)], C = CASES[id];
+  const st = cloneState(); st.caseId = id; st.mode = C.mode;
+  st.fluid = id === 'pipe' ? (Math.random() < 0.8 ? 'water' : 'air') : (Math.random() < 0.65 ? 'air' : 'water');
+  const dims = {};
+  C.dims.forEach(([k,, , def]) => { dims[k] = r2(def*Math.pow(10, rnd(-0.4, 0.4))); });
+  if (id === 'pipe') dims.L = r2(rnd(1, 8));
+  st.dims[id] = Object.assign({}, st.dims[id], dims);
+  if (st.fluid === 'air'){ st.Tinf = Math.round(rnd(5, 30)); st.Ts = Math.random() < 0.75 ? Math.round(st.Tinf + rnd(15, 110)) : Math.round(rnd(-20, st.Tinf - 8)); st.u = r2(rnd(0.5, 12)); }
+  else { st.Tinf = Math.round(rnd(10, 30)); st.Ts = Math.random() < 0.7 ? Math.round(rnd(st.Tinf + 15, 95)) : Math.round(rnd(2, st.Tinf - 6)); st.u = id === 'pipe' ? r2(rnd(0.03, 1.5)) : r2(rnd(0.05, 1.5)); }
+  if (id === 'pipe' && st.fluid === 'air') st.u = r2(rnd(1, 15));
+  st.face = Math.random() < 0.5 ? 'up' : 'down';
+  const r0 = compute(st);
+  const p0 = r0.p, ov = {rho:r2(p0.rho,4), cp:r2(p0.cp,4), k:r2(p0.k,3), mu:r2(p0.mu,3), Pr:r2(p0.Pr,3), beta:r2(p0.beta,3), T:r2(r0.Tref,3)};
+  ov.nu = r2(ov.mu/ov.rho, 3);
+  const r = compute(st, ov);
+  if (!isFinite(r.h) || r.h <= 0 || (C.mode === 'natural' && r.p.beta <= 0)) return genProblem();
+  // choices
+  const pool = [];
+  for (const k in CASES){ const cr = Object.assign({}, r, {C:CASES[k], st:Object.assign({}, st, {caseId:k})}); try { CASES[k].bands(cr).forEach(b => pool.push(b.tex)); } catch(e){} }
+  const opts = [r.band.tex];
+  r.bands.forEach(b => { if (!opts.includes(b.tex) && opts.length < 3) opts.push(b.tex); });
+  const shuffled = pool.filter(t => !opts.includes(t)).sort(() => Math.random() - 0.5);
+  while (opts.length < 4 && shuffled.length) opts.push(shuffled.pop());
+  return {st, r, ov, choices:opts.sort(() => Math.random() - 0.5)};
+}
+let GR = null;
+const gameScene = Scene($('#gscene'), () => GR);
+function newProblem(){
+  const P = genProblem(); GAME.cur = P; GAME.stage = 1; GAME.tries = 0; GAME.count++; GR = P.r;
+  gameScene.reset();
+  const st = P.st, r = P.r, C = r.C, ov = P.ov, pipe = C.id === 'pipe';
+  const fname = FLUIDS[st.fluid].name;
+  const giv = [];
+  giv.push(`형상: ${C.name} (${C.sub})${C.id === 'hplate' ? ` · ${st.face === 'up' ? '윗면' : '아랫면'}이 전열면` : ''}`);
+  C.dims.forEach(([k, l, u]) => giv.push(`${l} = ${st.dims[C.id][k]} ${u}`));
+  giv.push(`유체: ${fname}${C.mode === 'forced' ? `, ${pipe ? '평균 유속' : '유속'} = ${st.u} m/s` : ' (정지 상태)'}`);
+  giv.push(`${pipe ? '입구 유체 온도 T_in' : 'T∞'} = ${st.Tinf} °C, ${pipe ? '관 벽 온도' : '표면 온도'} T_s = ${st.Ts} °C`);
+  giv.push(`물성치(${F(ov.T)} °C): ρ = ${ov.rho}, c<sub>p</sub> = ${ov.cp}, k = ${ov.k}, ν = ${F(ov.nu)}, Pr = ${ov.Pr}${C.mode === 'natural' ? `, β = ${F(ov.beta)}` : ''}`);
+  $('#gProb').innerHTML = `<span class="tag">문제 ${GAME.count} · ${C.mode === 'forced' ? '강제대류' : '자연대류'}</span>
+    <p>${STORIES[C.id]}</p><ul class="givens">${giv.map(g => `<li>${g}</li>`).join('')}</ul>
+    ${pipe ? '<p class="mut" style="font-size:.84rem">관 내부 흐름의 μ<sub>b</sub>/μ<sub>s</sub> 보정은 1로 봅니다. q는 출구 온도로부터 구합니다(벽 온도 일정).</p>' : ''}
+    <div class="stagebox" id="st1"><span class="ask">① 이 조건에 맞는 Nu 상관식은? <span class="mut" style="font-weight:400">(먼저 ${C.axis}를 계산해 보세요)</span></span>
+      <div class="choices" id="gChoices">${P.choices.map((c, i) => `<button data-i="${i}">${c}</button>`).join('')}</div><div class="fb" id="fb1"></div></div>
+    <div class="stagebox" id="st2" hidden><span class="ask">② 열전달계수 h는? (±5%)</span>
+      <div class="ansrow"><span class="in"><input id="ans2" type="number" step="any" aria-label="열전달계수 h"><em>W/m²·K</em></span><button class="primary" id="chk2">확인</button><button class="ghost" id="hint2">힌트</button></div><div class="fb" id="fb2"></div></div>
+    <div class="stagebox" id="st3" hidden><span class="ask">③ 열전달 속도 q는? (±5%, 부호 무시)</span>
+      <div class="ansrow"><span class="in"><input id="ans3" type="number" step="any" aria-label="열전달 속도 q"><em>W</em></span><button class="primary" id="chk3">확인</button><button class="ghost" id="hint3">힌트</button></div><div class="fb" id="fb3"></div></div>
+    <div class="btns" style="margin-top:12px"><button class="ghost" id="showSol">풀이 보기</button></div>`;
+  $('#gSolve').hidden = true;
+  document.querySelectorAll('#gChoices button').forEach(b => b.onclick = () => pick(b));
+  $('#chk2').onclick = () => checkNum(2); $('#chk3').onclick = () => checkNum(3);
+  $('#ans2').addEventListener('keydown', e => { if (e.key === 'Enter') checkNum(2); });
+  $('#ans3').addEventListener('keydown', e => { if (e.key === 'Enter') checkNum(3); });
+  $('#hint2').onclick = () => { $('#fb2').className = 'fb hint'; $('#fb2').innerHTML = `${C.axis} = ${F(r.val)} 이므로 선택한 식으로 Nu를 구한 뒤 h = Nu·k/L<sub>c</sub> (L<sub>c</sub> = ${F(r.Lc)} m)`; GAME.tries++; };
+  $('#hint3').onclick = () => { $('#fb3').className = 'fb hint'; $('#fb3').innerHTML = pipe ? 'ṁ = ρu<sub>m</sub>πD²/4, T<sub>out</sub> = T<sub>s</sub> − (T<sub>s</sub> − T<sub>in</sub>)e<sup>−hA/(ṁc<sub>p</sub>)</sup>, q = ṁc<sub>p</sub>(T<sub>out</sub> − T<sub>in</sub>)' : `q = hAΔT, A = ${F(r.A)} m²`; GAME.tries++; };
+  $('#showSol').onclick = reveal;
+  score();
+}
+function score(){ $('#gScore').textContent = GAME.score; $('#gStreak').textContent = GAME.streak; $('#gCount').textContent = GAME.count; }
+function pick(b){
+  if (GAME.stage !== 1) return;
+  const P = GAME.cur, ok = P.choices[+b.dataset.i] === P.r.band.tex;
+  b.classList.add(ok ? 'ok' : 'no');
+  if (ok){
+    $('#fb1').className = 'fb ok'; $('#fb1').innerHTML = `정답입니다. ${P.r.C.axis} = ${F(P.r.val)} → ${rangeLabel(P.r)}`;
+    GAME.score += GAME.tries ? 5 : 10; GAME.stage = 2; GAME.tries = 0; $('#st2').hidden = false; $('#ans2').focus();
+    document.querySelectorAll('#gChoices button').forEach(x => x.disabled = true);
+  } else { $('#fb1').className = 'fb no'; $('#fb1').innerHTML = `다시 생각해 보세요. ${P.r.C.axis}를 계산해 구간을 확인했나요?`; GAME.tries++; GAME.streak = 0; }
+  score();
+}
+function checkNum(n){
+  if (GAME.stage !== n) return;
+  const P = GAME.cur, v = parseFloat($('#ans' + n).value), want = n === 2 ? P.r.h : Math.abs(P.r.q);
+  const fb = $('#fb' + n);
+  if (!isFinite(v)){ fb.className = 'fb no'; fb.textContent = '숫자를 입력하세요.'; return; }
+  const err = Math.abs(Math.abs(v) - want)/want;
+  if (err <= 0.05){
+    fb.className = 'fb ok'; fb.innerHTML = `정답입니다. ${n === 2 ? 'h' : 'q'} = ${F(n === 2 ? P.r.h : P.r.q)} ${n === 2 ? 'W/m²·K' : 'W'} (오차 ${F(err*100, 2)}%)`;
+    GAME.score += GAME.tries ? 10 : 20; GAME.tries = 0;
+    if (n === 2){ GAME.stage = 3; $('#st3').hidden = false; $('#ans3').focus(); }
+    else { GAME.stage = 4; GAME.streak++; GAME.score += 5*GAME.streak; reveal(); }
+  } else {
+    fb.className = 'fb no'; fb.innerHTML = `아직 아닙니다 (차이 ${F(err*100, 2)}%). ${err > 0.5 ? '단위(m, mm)와 지수 계산을 확인하세요.' : '반올림보다 큰 차이입니다. 식을 다시 확인하세요.'}`;
+    GAME.tries++; GAME.streak = 0;
+  }
+  score();
+}
+function reveal(){
+  const r = GAME.cur.r;
+  $('#gSolve').hidden = false;
+  renderPath(r, $('#gPath')); renderRegime(r, $('#gRegime'));
+  $('#gWork1').innerHTML = work1HTML(r, true); $('#gWork2').innerHTML = work2HTML(r);
+  if (GAME.stage < 4){ GAME.streak = 0; GAME.stage = 5; score(); }
+}
+$('#newBtn').onclick = newProblem;
+
+/* ================= TABS / BIG ================= */
+function showView(v){
+  if (!['sim','design','game'].includes(v)) v = 'sim';
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.view === v));
+  ['sim','design','game'].forEach(n => $('#view-' + n).hidden = n !== v);
+  if (v === 'design'){ syncDesign(); solveDesign(); }
+  if (v === 'game' && !GAME.cur) newProblem();
+}
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { location.hash = b.dataset.view; showView(b.dataset.view); });
+window.addEventListener('hashchange', () => showView(location.hash.slice(1)));
+$('#bigBtn').onclick = e => { const on = !document.documentElement.classList.contains('big'); document.documentElement.classList.toggle('big', on); e.currentTarget.setAttribute('aria-pressed', on); setTimeout(() => { simScene.reset(); if (GR) gameScene.reset(); }, 50); };
+$('#fluid').onchange = e => { S.fluid = e.target.value; buildCustom(); update(); };
+window.addEventListener('resize', () => { if (!$('#view-design').hidden) solveDesign(); });
+
+buildPresets(); buildAll(); update(true);
+showView(location.hash.slice(1));
+</script>
+</body>
+</html>
